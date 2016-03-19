@@ -1,0 +1,372 @@
+#!/usr/bin/env bash
+
+########################################################################################
+
+APP="gopack"
+VER="1.0.0"
+
+########################################################################################
+
+NORM=0
+BOLD=1
+UNLN=4
+RED=31
+GREEN=32
+BROWN=33
+BLUE=34
+MAG=35
+CYAN=36
+GREY=37
+
+CL_NORM="\e[${NORM}m"
+CL_BOLD="\e[${BOLD}m"
+CL_UNLN="\e[${UNLN}m"
+CL_RED="\e[${RED}m"
+CL_GREEN="\e[${GREEN}m"
+CL_BROWN="\e[${BROWN}m"
+CL_BLUE="\e[${BLUE}m"
+CL_MAG="\e[${MAG}m"
+CL_CYAN="\e[${CYAN}m"
+CL_GREY="\e[${GREY}m"
+CL_BL_RED="\e[${RED};1m"
+CL_BL_GREEN="\e[${GREEN};1m"
+CL_BL_BROWN="\e[${BROWN};1m"
+CL_BL_BLUE="\e[${BLUE};1m"
+CL_BL_MAG="\e[${MAG};1m"
+CL_BL_CYAN="\e[${CYAN};1m"
+CL_BL_GREY="\e[${GREY};1m"
+CL_UL_RED="\e[${RED};4m"
+CL_UL_GREEN="\e[${GREEN};4m"
+CL_UL_BROWN="\e[${BROWN};4m"
+CL_UL_BLUE="\e[${BLUE};4m"
+CL_UL_MAG="\e[${MAG};4m"
+CL_UL_CYAN="\e[${CYAN};4m"
+CL_UL_GREY="\e[${GREY};4m"
+CL_BG_RED="\e[${RED};7m"
+CL_BG_GREEN="\e[${GREEN};7m"
+CL_BG_BROWN="\e[${BROWN};7m"
+CL_BG_BLUE="\e[${BLUE};7m"
+CL_BG_MAG="\e[${MAG};7m"
+CL_BG_CYAN="\e[${CYAN};7m"
+CL_BG_GREY="\e[${GREY};7m"
+
+########################################################################################
+
+SEPARATOR="--------------------------------------------------------------------------------"
+
+TMP_TEMPLATE="gopack-XXXXXXXX"
+
+SUPPORTED_ARGS="tmp output version !verbose !help !usage"
+SHORT_ARGS="t:tmp o:output v:version V:!verbose h:!help"
+
+# Path to temporary dir (String)
+tmp="/tmp"
+
+########################################################################################
+
+# Main function
+#
+# *: All unparsed argumens
+#
+# Code: No
+# Echo: No
+main() {
+  if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
+    usage
+    exit 0
+  fi
+
+  if [[ -z "$tmp" ]] ; then
+    show "Path to temporary directory can't be empty" $RED
+    exit 1
+  fi
+
+  if [[ ! -d "$tmp" ]] ; then
+    show "Temporary directory $tmp is not exist" $RED
+    exit 1
+  fi
+
+  if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
+    show "Temporary directory $tmp must be readable, writable and executable" $RED
+    exit 1 
+  fi
+
+  local path="$1"
+
+  packSources "$path"
+}
+
+# Download and pack sources
+#
+# 1: Path (String)
+#
+# Code: No
+# Echo: No
+packSources() {
+  local path="$1"
+  local tmp_dir=$(mktemp -d ${tmp}/$TMP_TEMPLATE)
+
+  if [[ -z "$output" ]] ; then
+    output=$(getOutputName "$path")
+  fi
+
+  show ""
+
+  export GOPATH="$tmp_dir"
+
+  showm "Downloading sources... " $BOLD
+
+  if [[ -n "$verbose" ]] ; then
+    show "\n\n$SEPARATOR\n" $GREY
+    go get -v "$path"
+    show "\n$SEPARATOR\n" $GREY
+  else
+    go get "$path"
+    show "DONE" $GREEN
+  fi
+
+  cleanPackDir "${tmp_dir}/src"
+
+  mv ${tmp_dir}/src ${tmp_dir}/${output}
+
+  showm "Packing sources... " $BOLD
+
+  pushd ${tmp_dir} &> /dev/null
+    
+    if [[ -n "$verbose" ]] ; then
+      show "\n\n$SEPARATOR\n" $GREY
+      tar cjfv "${output}.tar.bz2" "$output"
+      show "\n$SEPARATOR\n" $GREY
+    else
+      tar cjf "${output}.tar.bz2" "$output"
+      show "DONE" $GREEN
+    fi
+
+  popd &> /dev/null
+
+  cp "${tmp_dir}/${output}.tar.bz2" .
+
+  rm -rf $tmp_dir
+
+  [[ -z "$verbose" ]] && show ""
+
+  show "Sources packed and saved as ${output}.tar.bz2\n" $GREEN
+}
+
+# Remove repo data from directory
+#
+# 1: Path to directory (String)
+#
+# Code: No
+# Echo: No
+cleanPackDir() {
+  local dir="$1"
+
+  find $dir -type d -name ".git" -exec rm -rf {} \; 2> /dev/null
+  find $dir -type d -name ".hg" -exec rm -rf {} \; 2> /dev/null
+  find $dir -type d -name ".svn" -exec rm -rf {} \; 2> /dev/null
+  find $dir -type d -name ".bzr" -exec rm -rf {} \; 2> /dev/null
+
+  find $dir -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".hgignore" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".bzrignore" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
+}
+
+# Generate output file name
+#
+# 1: Path (String)
+#
+# Code: No
+# Echo: File name (String)
+getOutputName() {
+  local path="$1"
+  local base=$(basename "$path")
+
+  if [[ -n "$version" ]] ; then
+    echo "$base-$version"
+  else
+    echo "$base"
+  fi
+}
+
+########################################################################################
+
+# Print message to console
+#
+# 1: Message (String)
+# 2: Color (Number) [Optional]
+#
+# Code: No
+# Echo: No
+show() {
+  if [[ -n "$2" ]] ; then
+    echo -e "\e[${2}m${1}${CL_NORM}"
+  else
+    echo -e "$@"
+  fi
+}
+
+# Print message without new line symbol to console
+#
+# 1: Message (String)
+# 2: Color (Number) [Optional]
+# 
+# Code: No
+# Echo: No
+showm() {
+  local message
+
+  if [[ $2 && ! $no_colors ]] ; then
+    message=$(echo "\e["$2"m"$1"\e[0m")
+  else
+    message="$1"
+  fi
+
+  printf "$message"
+}
+
+# Show usage info
+#
+# Code: No
+# Echo: No
+usage() {
+  show ""
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Simple go source packing utility for building rpm packages"
+  show ""
+  show "${CL_BOLD}Usage:${CL_NORM} gopack ${CL_GREEN}options${CL_NORM} package-path"
+  show ""
+  show "Options" $BOLD
+  show ""
+  show "  ${CL_GREEN}--output, -v${CL_NORM} ${CL_GREY}filename${CL_NORM}    Output file name (without extension)"
+  show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_GREY}version${CL_NORM}    Package version"
+  show "  ${CL_GREEN}--tmp, -t${CL_NORM} ${CL_GREY}path${CL_NORM}           Path to temporary directory (/tmp by default)"
+  show "  ${CL_GREEN}--verbose, -V${CL_NORM}            Verbose output"
+  show "  ${CL_GREEN}--help, -h${CL_NORM}               Show this help message"
+  show ""
+  show "Examples" $BOLD
+  show ""
+  show "  gopack -v 1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  Pack sources for version 1.0.1 and save result as ssllabs_client-1.0.1.tar.bz2" $GREY
+  show ""
+  show "  gopack -o ssllabs-client-1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2" $GREY
+  show ""
+  show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $GREY
+  show "Essential Kaos Open Source License <http://essentialkaos.com/ekol?en>" $GREY
+  show ""
+}
+
+# Print message about unsupported argument
+#
+# 1: Argument (String)
+#
+# Code: No
+# Echo: No
+showArgWarn() {
+  show "Unknown argument $1." $RED
+  exit 1
+}
+
+## ARGUMENTS PARSING 2 #################################################################
+
+[[ $# -eq 0 ]] && main && exit $?
+
+unset arg argn argm argv argt argk
+
+argv="$@" ; argt=""
+
+while [[ -n "$1" ]] ; do
+  if [[ "$1" =~ \  && -n "$argn" ]] ; then
+    declare $argn="$1"
+    unset argn && shift && continue
+  
+  elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
+    argm=${1:1}
+
+    if [[ \ $SHORT_ARGS\  =~ \ $argm:!?([a-zA-Z0-9_]*) ]] ; then
+      arg="${BASH_REMATCH[1]}"
+    else
+      showArgWarn "-$argm" 2> /dev/null || :
+      shift && continue
+    fi
+
+    if [[ -z "$argn" ]] ; then
+      argn=$arg
+    else
+      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+      argn=$arg
+    fi
+
+    if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+      showArgWarn "-$argm" 2> /dev/null || :
+      shift && continue
+    fi
+
+    if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+      declare $argn=true ; unset argn ; argk=true
+    else
+      unset argk
+    fi
+
+    shift && continue
+ 
+  elif [[ "$1" =~ ^-{2}[a-zA-Z]{1}[a-zA-Z0-9_-]+.*$ ]] ; then
+    arg=${1:2}
+
+    if [[ $arg == *=* ]] ; then
+      IFS="=" read -ra arg <<< "$arg"
+
+      argm="${arg[0]}" ; argm=${argm//-/_}
+
+      if [[ ! $SUPPORTED_ARGS\  =~ $argm\  ]] ; then
+        showArgWarn "--${arg[0]//_/-}" 2> /dev/null || :
+        shift && continue
+      fi
+
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare $argm="${!argm} ${arg[@]:1:99}" || declare $argm="${arg[@]:1:99}"
+
+      unset argm && shift && continue
+   
+    else
+      arg=${arg//-/_}
+
+      if [[ -z "$argn" ]] ; then
+        argn=$arg
+      else
+        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+        argn=$arg
+      fi
+
+      if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+        showArgWarn "--${argn//_/-}" 2> /dev/null || :
+        shift && continue
+      fi
+
+      if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+        declare $argn=true ; unset argn ; argk=true
+      else
+        unset argk
+      fi
+
+      shift && continue
+    fi
+  else
+    if [[ -n "$argn" ]] ; then
+      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare $argn="${!argn} $1" || declare $argn="$1"
+
+      unset argn && shift && continue
+    fi
+  fi
+
+  argt="$argt $1" ; shift
+
+done
+
+[[ -n "$argn" ]] && declare $argn=true
+
+unset arg argn argm argk
+
+[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
+
+########################################################################################
