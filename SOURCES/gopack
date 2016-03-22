@@ -91,6 +91,11 @@ main() {
     exit 1 
   fi
 
+  if [[ ! $(type -P go) ]] ; then
+    show "This utility require go. Install it first." $RED
+    exit 1
+  fi
+
   local path="$1"
 
   packSources "$path"
