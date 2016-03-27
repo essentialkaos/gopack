@@ -88,7 +88,7 @@ main() {
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
     show "Temporary directory $tmp must be readable, writable and executable" $RED
-    exit 1 
+    exit 1
   fi
 
   if [[ ! $(type -P go) ]] ; then
@@ -130,14 +130,16 @@ packSources() {
     show "DONE" $GREEN
   fi
 
+  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
   cleanPackDir "${tmp_dir}/src"
 
   mv ${tmp_dir}/src ${tmp_dir}/${output}
+  mv ${tmp_dir}/REVISIONS ${tmp_dir}/${output}/
 
   showm "Packing sources... " $BOLD
 
   pushd ${tmp_dir} &> /dev/null
-    
+
     if [[ -n "$verbose" ]] ; then
       show "\n\n$SEPARATOR\n" $GREY
       tar cjfv "${output}.tar.bz2" "$output"
@@ -155,12 +157,47 @@ packSources() {
 
   [[ -z "$verbose" ]] && show ""
 
-  show "Sources packed and saved as ${output}.tar.bz2\n" $GREEN
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}.tar.bz2${CL_NORM}\n"
+}
+
+# Save latest commit hash to file (currently supported only git)
+#
+# 1: Path to dir with sources (String)
+# 2: Output file (String)
+#
+# Code: No
+# Echo: No
+saveLatestCommitsHash() {
+  local dir="$1"
+  local output="$2"
+
+  local git_dir
+
+  pushd $dir &> /dev/null
+
+    for git_dir in $(find . -name ".git" -type d) ; do
+
+      pushd $git_dir &> /dev/null
+
+        pushd .. &> /dev/null
+
+          local repo_dir=$(dirname ${git_dir:2:9999})
+          local head_hash=$(git rev-parse HEAD)
+
+        popd &> /dev/null
+
+        echo "$head_hash $repo_dir" >> $output
+
+      popd &> /dev/null
+
+    done
+
+  popd &> /dev/null
 }
 
 # Remove repo data from directory
 #
-# 1: Path to directory (String)
+# 1: Path to directory with sources (String)
 #
 # Code: No
 # Echo: No
@@ -176,6 +213,8 @@ cleanPackDir() {
   find $dir -type f -name ".hgignore" -exec rm -f {} \; 2> /dev/null
   find $dir -type f -name ".bzrignore" -exec rm -f {} \; 2> /dev/null
   find $dir -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
+
+  find $dir -type f -name ".travis.yml" -exec rm -f {} \; 2> /dev/null
 }
 
 # Generate output file name
@@ -216,7 +255,7 @@ show() {
 #
 # 1: Message (String)
 # 2: Color (Number) [Optional]
-# 
+#
 # Code: No
 # Echo: No
 showm() {
@@ -285,7 +324,7 @@ while [[ -n "$1" ]] ; do
   if [[ "$1" =~ \  && -n "$argn" ]] ; then
     declare $argn="$1"
     unset argn && shift && continue
-  
+
   elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
     argm=${1:1}
 
@@ -315,7 +354,7 @@ while [[ -n "$1" ]] ; do
     fi
 
     shift && continue
- 
+
   elif [[ "$1" =~ ^-{2}[a-zA-Z]{1}[a-zA-Z0-9_-]+.*$ ]] ; then
     arg=${1:2}
 
@@ -332,7 +371,7 @@ while [[ -n "$1" ]] ; do
       [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare $argm="${!argm} ${arg[@]:1:99}" || declare $argm="${arg[@]:1:99}"
 
       unset argm && shift && continue
-   
+
     else
       arg=${arg//-/_}
 
