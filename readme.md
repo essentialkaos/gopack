@@ -28,7 +28,10 @@ Options
 
   --output, -v filename    Output file name (without extension)
   --version, -v version    Package version
-  --tmp, -t path           Path to temporary directory (/tmp by default)
+  --revision, -r revision  Target revision (will be set after sources fetching)
+  --branch, -b branch      Target branch (will be set after sources fetching)
+  --tag, -t tag            Target tag (will be set after sources fetching)
+  --tmp, -T path           Path to temporary directory (/tmp by default)
   --verbose, -V            Verbose output
   --help, -h               Show this help message
 
@@ -39,6 +42,10 @@ Examples
 
   gopack -o ssllabs-client-1.0.1 github.com/essentialkaos/ssllabs_client
   Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2
+
+  gopack -o ssllabs-client-1.0.1 -t v1.0.1 github.com/essentialkaos/ssllabs_client
+  Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result 
+  as ssllabs-client-1.0.1.tar.bz2
 
 ```
 

@@ -423,7 +423,10 @@ usage() {
   show ""
   show "  ${CL_GREEN}--output, -v${CL_NORM} ${CL_GREY}filename${CL_NORM}    Output file name (without extension)"
   show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_GREY}version${CL_NORM}    Package version"
-  show "  ${CL_GREEN}--tmp, -t${CL_NORM} ${CL_GREY}path${CL_NORM}           Path to temporary directory (/tmp by default)"
+  show "  ${CL_GREEN}--revision, -r${CL_NORM} ${CL_GREY}revision${CL_NORM}  Target revision (will be set after sources fetching)"
+  show "  ${CL_GREEN}--branch, -b${CL_NORM} ${CL_GREY}branch${CL_NORM}      Target branch (will be set after sources fetching)"
+  show "  ${CL_GREEN}--tag, -t${CL_NORM} ${CL_GREY}tag${CL_NORM}            Target tag (will be set after sources fetching)"
+  show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM}           Path to temporary directory (/tmp by default)"
   show "  ${CL_GREEN}--verbose, -V${CL_NORM}            Verbose output"
   show "  ${CL_GREEN}--help, -h${CL_NORM}               Show this help message"
   show ""
@@ -434,6 +437,10 @@ usage() {
   show ""
   show "  gopack -o ssllabs-client-1.0.1 github.com/essentialkaos/ssllabs_client"
   show "  Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2" $GREY
+  show ""
+  show "  gopack -o ssllabs-client-1.0.1 -t v1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result " $GREY
+  show "  as ssllabs-client-1.0.1.tar.bz2" $GREY
   show ""
   show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $GREY
   show "Essential Kaos Open Source License <http://essentialkaos.com/ekol?en>" $GREY
