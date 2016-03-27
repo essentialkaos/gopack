@@ -56,8 +56,8 @@ SEPARATOR="---------------------------------------------------------------------
 
 TMP_TEMPLATE="gopack-XXXXXXXX"
 
-SUPPORTED_ARGS="tmp output version !verbose !help !usage"
-SHORT_ARGS="t:tmp o:output v:version V:!verbose h:!help"
+SUPPORTED_ARGS="tmp output version revision tag branch !verbose !help !usage"
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch V:!verbose h:!help"
 
 # Path to temporary dir (String)
 tmp="/tmp"
@@ -96,9 +96,7 @@ main() {
     exit 1
   fi
 
-  local path="$1"
-
-  packSources "$path"
+  process "$1"
 }
 
 # Download and pack sources
@@ -107,57 +105,138 @@ main() {
 #
 # Code: No
 # Echo: No
-packSources() {
-  local path="$1"
+process() {
+  local package="$1"
   local tmp_dir=$(mktemp -d ${tmp}/$TMP_TEMPLATE)
 
   if [[ -z "$output" ]] ; then
-    output=$(getOutputName "$path")
+    output=$(getOutputName "$package")
   fi
 
   show ""
 
-  export GOPATH="$tmp_dir"
+  showm "Setting temporary Go environment variables... " $BOLD
 
-  showm "Downloading sources... " $BOLD
+  setupGoEnv "$tmp_dir"
 
-  if [[ -n "$verbose" ]] ; then
-    show "\n\n$SEPARATOR\n" $GREY
-    go get -v "$path"
-    show "\n$SEPARATOR\n" $GREY
-  else
-    go get "$path"
-    show "DONE" $GREEN
+  show "DONE" $GREEN
+
+  if ! checkoutCode "$package" "$tmp_dir" ; then
+    cleanAndExit "$tmp_dir" 1
   fi
 
-  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
-  cleanPackDir "${tmp_dir}/src"
+  if ! downloadDeps "$package" "$tmp_dir" ; then
+    cleanAndExit "$tmp_dir" 1
+  fi
 
   mv ${tmp_dir}/src ${tmp_dir}/${output}
   mv ${tmp_dir}/REVISIONS ${tmp_dir}/${output}/
 
-  showm "Packing sources... " $BOLD
-
-  pushd ${tmp_dir} &> /dev/null
-
-    if [[ -n "$verbose" ]] ; then
-      show "\n\n$SEPARATOR\n" $GREY
-      tar cjfv "${output}.tar.bz2" "$output"
-      show "\n$SEPARATOR\n" $GREY
-    else
-      tar cjf "${output}.tar.bz2" "$output"
-      show "DONE" $GREEN
-    fi
-
-  popd &> /dev/null
+  if ! packSources "$output" "$tmp_dir" ; then
+    cleanAndExit "$tmp_dir" 1
+  fi
 
   cp "${tmp_dir}/${output}.tar.bz2" .
-
-  rm -rf $tmp_dir
 
   [[ -z "$verbose" ]] && show ""
 
   show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}.tar.bz2${CL_NORM}\n"
+
+  cleanAndExit "$tmp_dir"
+}
+
+setupGoEnv() {
+  local tmp_dir="$1"
+
+  mkdir "$tmp_dir/src"
+  mkdir "$tmp_dir/pkg"
+  mkdir "$tmp_dir/bin"
+
+  export GOPATH="$tmp_dir"
+}
+
+# Checkout source code
+#
+# 1: Path to temporary dir (String)
+# 2: Path to source code (String)
+#
+# Code: No
+# Echo: No
+checkoutCode() {
+  local package="$1"
+  local tmp_dir="$2"
+  local git_path="https://$package.git"
+  local package_name=$(basename $package)
+
+  showm "Downloading sources... " $BOLD
+
+  mkdir -p "$tmp_dir/src/$package"
+
+  if ! execCmd "git" "clone" "$git_path" "$tmp_dir/src/$package/" ; then
+    show "Error while cloning repository $git_path" $RED
+    return 1
+  fi
+
+  pushd "$tmp_dir/src/$package" &> /dev/null
+
+    if [[ -n "$revision" ]] ; then
+      showm "Setting HEAD to revision $revision... " $BOLD
+
+      if ! execCmd "git" "checkout" "$revision" ; then
+        show "Can't checkout revision $revision" $RED
+        return 1
+      fi
+    fi
+
+    if [[ -n "$branch" ]] ; then
+      showm "Setting HEAD to branch $branch... " $BOLD
+
+      if ! execCmd "git" "checkout" "$branch" ; then
+        show "Can't checkout branch $branch" $RED
+        return 1
+      fi
+    fi
+
+    if [[ -n "$tag" ]] ; then
+      showm "Setting HEAD to tag $tag... " $BOLD
+
+      if ! execCmd "git" "checkout" "$tag" ; then
+        show "Can't checkout tag $tag" $RED
+        return 1
+      fi
+    fi
+
+  popd &> /dev/null
+
+  return 0
+}
+
+# Download dependencies for given package
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: Yes
+# Echo: No
+downloadDeps() {
+  local package="$1"
+  local tmp_dir="$2"
+
+  showm "Downloading dependencies... " $BOLD
+
+  pushd "$tmp_dir/src/$package" &> /dev/null
+
+    if ! execCmd "go" "get" "-v" "./..." ; then
+      show "Can't download package dependencies" $RED
+      return 1
+    fi
+
+  popd &> /dev/null
+
+  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
+  cleanPackDir "${tmp_dir}/src"
+
+  return 0
 }
 
 # Save latest commit hash to file (currently supported only git)
@@ -195,7 +274,7 @@ saveLatestCommitsHash() {
   popd &> /dev/null
 }
 
-# Remove repo data from directory
+# Remove repo data and CI services configs
 #
 # 1: Path to directory with sources (String)
 #
@@ -205,16 +284,32 @@ cleanPackDir() {
   local dir="$1"
 
   find $dir -type d -name ".git" -exec rm -rf {} \; 2> /dev/null
-  find $dir -type d -name ".hg" -exec rm -rf {} \; 2> /dev/null
-  find $dir -type d -name ".svn" -exec rm -rf {} \; 2> /dev/null
-  find $dir -type d -name ".bzr" -exec rm -rf {} \; 2> /dev/null
-
   find $dir -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".hgignore" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".bzrignore" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
-
+  find $dir -type f -name ".gitattributes" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".gitmodules" -exec rm -f {} \; 2> /dev/null
   find $dir -type f -name ".travis.yml" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".drone.sec" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".drone.yml" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".hound.yml" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".vexor.yml" -exec rm -f {} \; 2> /dev/null
+}
+
+packSources() {
+  local output="$1"
+  local tmp_dir="$2"
+
+  showm "Packing sources... " $BOLD
+
+  pushd ${tmp_dir} &> /dev/null
+
+    if ! execCmd "tar" "cjfv" "${output}.tar.bz2" "$output" ; then
+      show "Can't pack sources" $RED
+      return 1
+    fi
+
+  popd &> /dev/null
+
+  return 0
 }
 
 # Generate output file name
@@ -232,6 +327,50 @@ getOutputName() {
   else
     echo "$base"
   fi
+}
+
+# Execute some command
+#
+# *: Command and all arguments
+#
+# Code: Yes
+# Echo: No
+execCmd() {
+  local status
+
+  if [[ -n "$verbose" ]] ; then
+    show "\n\n$SEPARATOR\n" $GREY
+    $@
+    status=$?
+    show "\n$SEPARATOR\n" $GREY
+  else
+    $@ &> /dev/null
+    status=$?
+
+    if [[ $status -ne 0 ]] ; then
+      show "ERROR" $RED
+    else
+      show "DONE" $GREEN
+    fi
+  fi
+
+  return $status
+}
+
+# Clean temporary data and exit with given exit code
+#
+# 1: Path to temporary dir (String)
+# 2: Exit code (Number) [Optional]
+#
+# Code: No
+# Echo: No
+cleanAndExit() {
+  local tmp_dir="$1"
+  local code="${2:-0}"
+
+  rm -rf "$tmp_dir"
+
+  exit $code
 }
 
 ########################################################################################

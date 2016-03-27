@@ -14,7 +14,7 @@ Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
 BuildArch:       noarch
 BuildRoot:       %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:        golang
+Requires:        golang git mercurial
 
 Provides:        %{name} = %{version}-%{release}
 
