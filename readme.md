@@ -19,6 +19,29 @@ chmod +x gopack
 sudo mv gopack /usr/bin/gopack
 ```
 
+#### Usage
+
+```
+Usage: gopack options package-path
+
+Options
+
+  --output, -v filename    Output file name (without extension)
+  --version, -v version    Package version
+  --tmp, -t path           Path to temporary directory (/tmp by default)
+  --verbose, -V            Verbose output
+  --help, -h               Show this help message
+
+Examples
+
+  gopack -v 1.0.1 github.com/essentialkaos/ssllabs_client
+  Pack sources for version 1.0.1 and save result as ssllabs_client-1.0.1.tar.bz2
+
+  gopack -o ssllabs-client-1.0.1 github.com/essentialkaos/ssllabs_client
+  Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2
+
+```
+
 #### License
 
 [EKOL](https://essentialkaos.com/ekol)
