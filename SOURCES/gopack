@@ -180,7 +180,7 @@ checkoutCode() {
   pushd "$tmp_dir/src/$package" &> /dev/null
 
     if [[ -n "$revision" ]] ; then
-      showm "Setting HEAD to revision $revision... " $BOLD
+      showm "Switching HEAD to revision $revision... " $BOLD
 
       if ! execCmd "git" "checkout" "$revision" ; then
         show "Can't checkout revision $revision" $RED
@@ -189,7 +189,7 @@ checkoutCode() {
     fi
 
     if [[ -n "$branch" ]] ; then
-      showm "Setting HEAD to branch $branch... " $BOLD
+      showm "Switching HEAD to branch $branch... " $BOLD
 
       if ! execCmd "git" "checkout" "$branch" ; then
         show "Can't checkout branch $branch" $RED
@@ -198,7 +198,7 @@ checkoutCode() {
     fi
 
     if [[ -n "$tag" ]] ; then
-      showm "Setting HEAD to tag $tag... " $BOLD
+      showm "Switching HEAD to tag $tag... " $BOLD
 
       if ! execCmd "git" "checkout" "$tag" ; then
         show "Can't checkout tag $tag" $RED
