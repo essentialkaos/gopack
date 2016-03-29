@@ -19,36 +19,20 @@ CYAN=36
 GREY=37
 
 CL_NORM="\e[${NORM}m"
-CL_BOLD="\e[${BOLD}m"
-CL_UNLN="\e[${UNLN}m"
-CL_RED="\e[${RED}m"
-CL_GREEN="\e[${GREEN}m"
-CL_BROWN="\e[${BROWN}m"
-CL_BLUE="\e[${BLUE}m"
-CL_MAG="\e[${MAG}m"
-CL_CYAN="\e[${CYAN}m"
-CL_GREY="\e[${GREY}m"
-CL_BL_RED="\e[${RED};1m"
-CL_BL_GREEN="\e[${GREEN};1m"
-CL_BL_BROWN="\e[${BROWN};1m"
-CL_BL_BLUE="\e[${BLUE};1m"
-CL_BL_MAG="\e[${MAG};1m"
-CL_BL_CYAN="\e[${CYAN};1m"
-CL_BL_GREY="\e[${GREY};1m"
-CL_UL_RED="\e[${RED};4m"
-CL_UL_GREEN="\e[${GREEN};4m"
-CL_UL_BROWN="\e[${BROWN};4m"
-CL_UL_BLUE="\e[${BLUE};4m"
-CL_UL_MAG="\e[${MAG};4m"
-CL_UL_CYAN="\e[${CYAN};4m"
-CL_UL_GREY="\e[${GREY};4m"
-CL_BG_RED="\e[${RED};7m"
-CL_BG_GREEN="\e[${GREEN};7m"
-CL_BG_BROWN="\e[${BROWN};7m"
-CL_BG_BLUE="\e[${BLUE};7m"
-CL_BG_MAG="\e[${MAG};7m"
-CL_BG_CYAN="\e[${CYAN};7m"
-CL_BG_GREY="\e[${GREY};7m"
+CL_RED="\e[0;${RED};49m"
+CL_GREEN="\e[0;${GREEN};49m"
+CL_BROWN="\e[0;${BROWN};49m"
+CL_BLUE="\e[0;${BLUE};49m"
+CL_MAG="\e[0;${MAG};49m"
+CL_CYAN="\e[0;${CYAN};49m"
+CL_GREY="\e[0;${GREY};49m"
+CL_BL_RED="\e[1;${RED};49m"
+CL_BL_GREEN="\e[1;${GREEN};49m"
+CL_BL_BROWN="\e[1;${BROWN};49m"
+CL_BL_BLUE="\e[1;${BLUE};49m"
+CL_BL_MAG="\e[1;${MAG};49m"
+CL_BL_CYAN="\e[1;${CYAN};49m"
+CL_BL_GREY="\e[1;${GREY};49m"
 
 ########################################################################################
 
@@ -82,12 +66,12 @@ main() {
   fi
 
   if [[ ! -d "$tmp" ]] ; then
-    show "Temporary directory $tmp is not exist" $RED
+    show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} is not exist${CL_NORM}"
     exit 1
   fi
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
-    show "Temporary directory $tmp must be readable, writable and executable" $RED
+    show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable${CL_NORM}"
     exit 1
   fi
 
@@ -112,8 +96,6 @@ process() {
   if [[ -z "$output" ]] ; then
     output=$(getOutputName "$package")
   fi
-
-  show ""
 
   showm "Setting temporary Go environment variables... " $BOLD
 
@@ -140,7 +122,7 @@ process() {
 
   [[ -z "$verbose" ]] && show ""
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}.tar.bz2${CL_NORM}\n"
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}.tar.bz2${CL_NORM}"
 
   cleanAndExit "$tmp_dir"
 }
@@ -172,14 +154,14 @@ checkoutCode() {
 
   if ! httpStatusOk "$git_path" ; then
     show "ERROR" $RED
-    show "Repository $git_path is not accessible" $RED
+    show "${CL_RED}Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible${CL_NORM}"
     return 1
   fi
 
   mkdir -p "$tmp_dir/src/$package"
 
   if ! execCmd "git" "clone" "$git_path" "$tmp_dir/src/$package/" ; then
-    show "Error while cloning repository $git_path" $RED
+    show "${CL_RED}Error while cloning repository ${CL_BL_RED}${git_path}${CL_NORM}" $RED
     return 1
   fi
 
@@ -189,7 +171,7 @@ checkoutCode() {
       showm "Switching HEAD to revision $revision... " $BOLD
 
       if ! execCmd "git" "checkout" "$revision" ; then
-        show "Can't checkout revision $revision" $RED
+        show "${CL_RED}Can't checkout revision ${CL_BL_RED}${revision}${CL_NORM}" $RED
         return 1
       fi
     fi
@@ -198,7 +180,7 @@ checkoutCode() {
       showm "Switching HEAD to branch $branch... " $BOLD
 
       if ! execCmd "git" "checkout" "$branch" ; then
-        show "Can't checkout branch $branch" $RED
+        show "${CL_RED}Can't checkout branch ${CL_BL_RED}${branch}${CL_NORM}" $RED
         return 1
       fi
     fi
@@ -207,7 +189,7 @@ checkoutCode() {
       showm "Switching HEAD to tag $tag... " $BOLD
 
       if ! execCmd "git" "checkout" "$tag" ; then
-        show "Can't checkout tag $tag" $RED
+        show "${CL_RED}Can't checkout tag ${CL_BL_RED}${tag}${CL_NORM}" $RED
         return 1
       fi
     fi
