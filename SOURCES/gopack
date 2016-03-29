@@ -1,0 +1,571 @@
+#!/usr/bin/env bash
+
+########################################################################################
+
+APP="gopack"
+VER="1.0.0"
+
+########################################################################################
+
+NORM=0
+BOLD=1
+UNLN=4
+RED=31
+GREEN=32
+BROWN=33
+BLUE=34
+MAG=35
+CYAN=36
+GREY=37
+
+CL_NORM="\e[${NORM}m"
+CL_RED="\e[0;${RED};49m"
+CL_GREEN="\e[0;${GREEN};49m"
+CL_BROWN="\e[0;${BROWN};49m"
+CL_BLUE="\e[0;${BLUE};49m"
+CL_MAG="\e[0;${MAG};49m"
+CL_CYAN="\e[0;${CYAN};49m"
+CL_GREY="\e[0;${GREY};49m"
+CL_BL_RED="\e[1;${RED};49m"
+CL_BL_GREEN="\e[1;${GREEN};49m"
+CL_BL_BROWN="\e[1;${BROWN};49m"
+CL_BL_BLUE="\e[1;${BLUE};49m"
+CL_BL_MAG="\e[1;${MAG};49m"
+CL_BL_CYAN="\e[1;${CYAN};49m"
+CL_BL_GREY="\e[1;${GREY};49m"
+
+########################################################################################
+
+SEPARATOR="--------------------------------------------------------------------------------"
+
+TMP_TEMPLATE="gopack-XXXXXXXX"
+
+SUPPORTED_ARGS="tmp output version revision tag branch !verbose !help !usage"
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch V:!verbose h:!help"
+
+# Path to temporary dir (String)
+tmp="/tmp"
+
+########################################################################################
+
+# Main function
+#
+# *: All unparsed argumens
+#
+# Code: No
+# Echo: No
+main() {
+  if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
+    usage
+    exit 0
+  fi
+
+  if [[ -z "$tmp" ]] ; then
+    show "Path to temporary directory can't be empty" $RED
+    exit 1
+  fi
+
+  if [[ ! -d "$tmp" ]] ; then
+    show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} is not exist${CL_NORM}"
+    exit 1
+  fi
+
+  if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
+    show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable${CL_NORM}"
+    exit 1
+  fi
+
+  if [[ ! $(type -P go) ]] ; then
+    show "This utility require go. Install it first." $RED
+    exit 1
+  fi
+
+  process "$1"
+}
+
+# Download and pack sources
+#
+# 1: Path (String)
+#
+# Code: No
+# Echo: No
+process() {
+  local package="$1"
+  local tmp_dir=$(mktemp -d ${tmp}/$TMP_TEMPLATE)
+
+  if [[ -z "$output" ]] ; then
+    output=$(getOutputName "$package")
+  fi
+
+  showm "Setting temporary Go environment variables... " $BOLD
+
+  setupGoEnv "$tmp_dir"
+
+  show "DONE" $GREEN
+
+  if ! checkoutCode "$package" "$tmp_dir" ; then
+    cleanAndExit "$tmp_dir" 1
+  fi
+
+  if ! downloadDeps "$package" "$tmp_dir" ; then
+    cleanAndExit "$tmp_dir" 1
+  fi
+
+  mv ${tmp_dir}/src ${tmp_dir}/${output}
+  mv ${tmp_dir}/REVISIONS ${tmp_dir}/${output}/
+
+  if ! packSources "$output" "$tmp_dir" ; then
+    cleanAndExit "$tmp_dir" 1
+  fi
+
+  cp "${tmp_dir}/${output}.tar.bz2" .
+
+  [[ -z "$verbose" ]] && show ""
+
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}.tar.bz2${CL_NORM}"
+
+  cleanAndExit "$tmp_dir"
+}
+
+# Make directory for go sources and set GOPATH environment variable
+#
+# Code: No
+# Echo: No
+setupGoEnv() {
+  local tmp_dir="$1"
+
+  mkdir "$tmp_dir/src"
+  mkdir "$tmp_dir/pkg"
+  mkdir "$tmp_dir/bin"
+
+  export GOPATH="$tmp_dir"
+}
+
+# Checkout source code
+#
+# 1: Path to temporary dir (String)
+# 2: Path to source code (String)
+#
+# Code: No
+# Echo: No
+checkoutCode() {
+  local package="$1"
+  local tmp_dir="$2"
+  local git_path="https://$package.git"
+  local package_name=$(basename $package)
+
+  showm "Downloading sources... " $BOLD
+
+  if ! httpStatusOk "$git_path" ; then
+    show "ERROR" $RED
+    show "${CL_RED}Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible${CL_NORM}"
+    return 1
+  fi
+
+  mkdir -p "$tmp_dir/src/$package"
+
+  if ! execCmd "git" "clone" "$git_path" "$tmp_dir/src/$package/" ; then
+    show "${CL_RED}Error while cloning repository ${CL_BL_RED}${git_path}${CL_NORM}" $RED
+    return 1
+  fi
+
+  pushd "$tmp_dir/src/$package" &> /dev/null
+
+    if [[ -n "$revision" ]] ; then
+      showm "Switching HEAD to revision $revision... " $BOLD
+
+      if ! execCmd "git" "checkout" "$revision" ; then
+        show "${CL_RED}Can't checkout revision ${CL_BL_RED}${revision}${CL_NORM}" $RED
+        return 1
+      fi
+    fi
+
+    if [[ -n "$branch" ]] ; then
+      showm "Switching HEAD to branch $branch... " $BOLD
+
+      if ! execCmd "git" "checkout" "$branch" ; then
+        show "${CL_RED}Can't checkout branch ${CL_BL_RED}${branch}${CL_NORM}" $RED
+        return 1
+      fi
+    fi
+
+    if [[ -n "$tag" ]] ; then
+      showm "Switching HEAD to tag $tag... " $BOLD
+
+      if ! execCmd "git" "checkout" "$tag" ; then
+        show "${CL_RED}Can't checkout tag ${CL_BL_RED}${tag}${CL_NORM}" $RED
+        return 1
+      fi
+    fi
+
+  popd &> /dev/null
+
+  return 0
+}
+
+# Download dependencies for given package
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: Yes
+# Echo: No
+downloadDeps() {
+  local package="$1"
+  local tmp_dir="$2"
+
+  showm "Downloading dependencies... " $BOLD
+
+  pushd "$tmp_dir/src/$package" &> /dev/null
+
+    if ! execCmd "go" "get" "-v" "./..." ; then
+      show "Can't download package dependencies" $RED
+      return 1
+    fi
+
+  popd &> /dev/null
+
+  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
+  cleanPackDir "${tmp_dir}/src"
+
+  return 0
+}
+
+# Save latest commit hash to file (currently supported only git)
+#
+# 1: Path to dir with sources (String)
+# 2: Output file (String)
+#
+# Code: No
+# Echo: No
+saveLatestCommitsHash() {
+  local dir="$1"
+  local output="$2"
+
+  local git_dir
+
+  pushd $dir &> /dev/null
+
+    for git_dir in $(find . -name ".git" -type d) ; do
+
+      pushd $git_dir &> /dev/null
+
+        pushd .. &> /dev/null
+
+          local repo_dir=$(dirname ${git_dir:2:9999})
+          local head_hash=$(git rev-parse HEAD)
+
+        popd &> /dev/null
+
+        echo "$head_hash $repo_dir" >> $output
+
+      popd &> /dev/null
+
+    done
+
+  popd &> /dev/null
+}
+
+# Remove repo data and CI services configs
+#
+# 1: Path to directory with sources (String)
+#
+# Code: No
+# Echo: No
+cleanPackDir() {
+  local dir="$1"
+
+  find $dir -type d -name ".git" -exec rm -rf {} \; 2> /dev/null
+  find $dir -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".gitattributes" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".gitmodules" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".travis.yml" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".drone.sec" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".drone.yml" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".hound.yml" -exec rm -f {} \; 2> /dev/null
+  find $dir -type f -name ".vexor.yml" -exec rm -f {} \; 2> /dev/null
+}
+
+packSources() {
+  local output="$1"
+  local tmp_dir="$2"
+
+  showm "Packing sources... " $BOLD
+
+  pushd ${tmp_dir} &> /dev/null
+
+    if ! execCmd "tar" "cjfv" "${output}.tar.bz2" "$output" ; then
+      show "Can't pack sources" $RED
+      return 1
+    fi
+
+  popd &> /dev/null
+
+  return 0
+}
+
+# Generate output file name
+#
+# 1: Path (String)
+#
+# Code: No
+# Echo: File name (String)
+getOutputName() {
+  local path="$1"
+  local base=$(basename "$path")
+
+  if [[ -n "$version" ]] ; then
+    echo "$base-$version"
+  else
+    echo "$base"
+  fi
+}
+
+# Execute some command
+#
+# *: Command and all arguments
+#
+# Code: Yes
+# Echo: No
+execCmd() {
+  local status
+
+  if [[ -n "$verbose" ]] ; then
+    show "\n\n$SEPARATOR\n" $GREY
+    $@
+    status=$?
+    show "\n$SEPARATOR\n" $GREY
+  else
+    $@ &> /dev/null
+    status=$?
+
+    if [[ $status -ne 0 ]] ; then
+      show "ERROR" $RED
+    else
+      show "DONE" $GREEN
+    fi
+  fi
+
+  return $status
+}
+
+# Check response status code for repo url
+#
+# 1: URL (String)
+#
+# Code: Yes
+# Echo: No
+httpStatusOk() {
+  local url="$1"
+  local code=$(curl -ILs -o /dev/null "$url" -w '%{http_code}')
+
+  if [[ $code -ne 200 ]] ; then
+    return 1
+  fi
+
+  return 0
+}
+
+# Clean temporary data and exit with given exit code
+#
+# 1: Path to temporary dir (String)
+# 2: Exit code (Number) [Optional]
+#
+# Code: No
+# Echo: No
+cleanAndExit() {
+  local tmp_dir="$1"
+  local code="${2:-0}"
+
+  rm -rf "$tmp_dir"
+
+  exit $code
+}
+
+########################################################################################
+
+# Print message to console
+#
+# 1: Message (String)
+# 2: Color (Number) [Optional]
+#
+# Code: No
+# Echo: No
+show() {
+  if [[ -n "$2" ]] ; then
+    echo -e "\e[${2}m${1}${CL_NORM}"
+  else
+    echo -e "$@"
+  fi
+}
+
+# Print message without new line symbol to console
+#
+# 1: Message (String)
+# 2: Color (Number) [Optional]
+#
+# Code: No
+# Echo: No
+showm() {
+  local message
+
+  if [[ $2 && ! $no_colors ]] ; then
+    message=$(echo "\e["$2"m"$1"\e[0m")
+  else
+    message="$1"
+  fi
+
+  printf "$message"
+}
+
+# Show usage info
+#
+# Code: No
+# Echo: No
+usage() {
+  show ""
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Simple go source packing utility for building rpm packages"
+  show ""
+  show "${CL_BOLD}Usage:${CL_NORM} gopack ${CL_GREEN}options${CL_NORM} package-path"
+  show ""
+  show "Options" $BOLD
+  show ""
+  show "  ${CL_GREEN}--output, -v${CL_NORM} ${CL_GREY}filename${CL_NORM}    Output file name (without extension)"
+  show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_GREY}version${CL_NORM}    Package version"
+  show "  ${CL_GREEN}--revision, -r${CL_NORM} ${CL_GREY}revision${CL_NORM}  Target revision (will be set after sources fetching)"
+  show "  ${CL_GREEN}--branch, -b${CL_NORM} ${CL_GREY}branch${CL_NORM}      Target branch (will be set after sources fetching)"
+  show "  ${CL_GREEN}--tag, -t${CL_NORM} ${CL_GREY}tag${CL_NORM}            Target tag (will be set after sources fetching)"
+  show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM}           Path to temporary directory (/tmp by default)"
+  show "  ${CL_GREEN}--verbose, -V${CL_NORM}            Verbose output"
+  show "  ${CL_GREEN}--help, -h${CL_NORM}               Show this help message"
+  show ""
+  show "Examples" $BOLD
+  show ""
+  show "  gopack -v 1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  Pack sources for version 1.0.1 and save result as ssllabs_client-1.0.1.tar.bz2" $GREY
+  show ""
+  show "  gopack -o ssllabs-client-1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2" $GREY
+  show ""
+  show "  gopack -o ssllabs-client-1.0.1 -t v1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result " $GREY
+  show "  as ssllabs-client-1.0.1.tar.bz2" $GREY
+  show ""
+  show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $GREY
+  show "Essential Kaos Open Source License <http://essentialkaos.com/ekol?en>" $GREY
+  show ""
+}
+
+# Print message about unsupported argument
+#
+# 1: Argument (String)
+#
+# Code: No
+# Echo: No
+showArgWarn() {
+  show "Unknown argument $1." $RED
+  exit 1
+}
+
+## ARGUMENTS PARSING 2 #################################################################
+
+[[ $# -eq 0 ]] && main && exit $?
+
+unset arg argn argm argv argt argk
+
+argv="$@" ; argt=""
+
+while [[ -n "$1" ]] ; do
+  if [[ "$1" =~ \  && -n "$argn" ]] ; then
+    declare $argn="$1"
+    unset argn && shift && continue
+
+  elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
+    argm=${1:1}
+
+    if [[ \ $SHORT_ARGS\  =~ \ $argm:!?([a-zA-Z0-9_]*) ]] ; then
+      arg="${BASH_REMATCH[1]}"
+    else
+      showArgWarn "-$argm" 2> /dev/null || :
+      shift && continue
+    fi
+
+    if [[ -z "$argn" ]] ; then
+      argn=$arg
+    else
+      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+      argn=$arg
+    fi
+
+    if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+      showArgWarn "-$argm" 2> /dev/null || :
+      shift && continue
+    fi
+
+    if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+      declare $argn=true ; unset argn ; argk=true
+    else
+      unset argk
+    fi
+
+    shift && continue
+
+  elif [[ "$1" =~ ^-{2}[a-zA-Z]{1}[a-zA-Z0-9_-]+.*$ ]] ; then
+    arg=${1:2}
+
+    if [[ $arg == *=* ]] ; then
+      IFS="=" read -ra arg <<< "$arg"
+
+      argm="${arg[0]}" ; argm=${argm//-/_}
+
+      if [[ ! $SUPPORTED_ARGS\  =~ $argm\  ]] ; then
+        showArgWarn "--${arg[0]//_/-}" 2> /dev/null || :
+        shift && continue
+      fi
+
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare $argm="${!argm} ${arg[@]:1:99}" || declare $argm="${arg[@]:1:99}"
+
+      unset argm && shift && continue
+
+    else
+      arg=${arg//-/_}
+
+      if [[ -z "$argn" ]] ; then
+        argn=$arg
+      else
+        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+        argn=$arg
+      fi
+
+      if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+        showArgWarn "--${argn//_/-}" 2> /dev/null || :
+        shift && continue
+      fi
+
+      if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+        declare $argn=true ; unset argn ; argk=true
+      else
+        unset argk
+      fi
+
+      shift && continue
+    fi
+  else
+    if [[ -n "$argn" ]] ; then
+      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare $argn="${!argn} $1" || declare $argn="$1"
+
+      unset argn && shift && continue
+    fi
+  fi
+
+  argt="$argt $1" ; shift
+
+done
+
+[[ -n "$argn" ]] && declare $argn=true
+
+unset arg argn argm argk
+
+[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
+
+########################################################################################
