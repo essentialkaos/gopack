@@ -127,6 +127,10 @@ process() {
   cleanAndExit "$tmp_dir"
 }
 
+# Make directory for go sources and set GOPATH environment variable
+#
+# Code: No
+# Echo: No
 setupGoEnv() {
   local tmp_dir="$1"
 
