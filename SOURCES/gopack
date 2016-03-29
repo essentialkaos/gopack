@@ -170,6 +170,12 @@ checkoutCode() {
 
   showm "Downloading sources... " $BOLD
 
+  if ! httpStatusOk "$git_path" ; then
+    show "ERROR" $RED
+    show "Repository $git_path is not accessible" $RED
+    return 1
+  fi
+
   mkdir -p "$tmp_dir/src/$package"
 
   if ! execCmd "git" "clone" "$git_path" "$tmp_dir/src/$package/" ; then
@@ -355,6 +361,23 @@ execCmd() {
   fi
 
   return $status
+}
+
+# Check response status code for repo url
+#
+# 1: URL (String)
+#
+# Code: Yes
+# Echo: No
+httpStatusOk() {
+  local url="$1"
+  local code=$(curl -ILs -o /dev/null "$url" -w '%{http_code}')
+
+  if [[ $code -ne 200 ]] ; then
+    return 1
+  fi
+
+  return 0
 }
 
 # Clean temporary data and exit with given exit code
