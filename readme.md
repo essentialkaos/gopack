@@ -2,6 +2,10 @@
 
 `gopack` is simple tool for packing go packages sources. This utility downloads package sources with all dependencies and pack into tar.bz2 archive.
 
+#### Usage demo
+
+[![asciicast](https://asciinema.org/a/40694.png)](https://asciinema.org/a/40694)
+
 #### Installation
 
 ###### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
