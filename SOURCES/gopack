@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.0.0"
+VER="1.0.1"
 
 ########################################################################################
 
@@ -218,7 +218,7 @@ downloadDeps() {
 
   pushd "$tmp_dir/src/$package" &> /dev/null
 
-    if ! execCmd "go" "get" "-v" "./..." ; then
+    if ! execCmd "go" "get" "-d" "-v" "./..." ; then
       show "Can't download package dependencies" $RED
       return 1
     fi
