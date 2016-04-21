@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.0.1"
+VER="1.0.2"
 
 ########################################################################################
 
@@ -430,7 +430,7 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  show "  ${CL_GREEN}--output, -v${CL_NORM} ${CL_GREY}filename${CL_NORM}    Output file name (without extension)"
+  show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}filename${CL_NORM}    Output file name (without extension)"
   show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_GREY}version${CL_NORM}    Package version"
   show "  ${CL_GREEN}--revision, -r${CL_NORM} ${CL_GREY}revision${CL_NORM}  Target revision (will be set after sources fetching)"
   show "  ${CL_GREEN}--branch, -b${CL_NORM} ${CL_GREY}branch${CL_NORM}      Target branch (will be set after sources fetching)"
