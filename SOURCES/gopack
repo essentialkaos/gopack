@@ -340,9 +340,9 @@ getOutputName() {
   local base=$(basename "$path")
 
   if [[ -n "$version" ]] ; then
-    echo "$base-$version.tar.gz"
+    echo "$base-$version.tar.bz2"
   else
-    echo "$base.tar.gz"
+    echo "$base.tar.bz2"
   fi
 }
 
