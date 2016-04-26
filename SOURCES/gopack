@@ -40,7 +40,7 @@ SEPARATOR="---------------------------------------------------------------------
 
 TMP_TEMPLATE="gopack-XXXXXXXX"
 
-SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz txz tar.xz"
+SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
 SUPPORTED_ARGS="tmp output version revision tag branch !verbose !help !usage"
 SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch V:!verbose h:!help"
