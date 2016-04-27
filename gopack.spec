@@ -1,6 +1,6 @@
 ###############################################################################
 
-Summary:         Tool for packing go package sources
+Summary:         Tool for packing Go package sources
 Name:            gopack
 Version:         1.1.0
 Release:         0%{?dist}
@@ -21,7 +21,7 @@ Provides:        %{name} = %{version}-%{release}
 ###############################################################################
 
 %description
-Simple tool for packing go package sources.
+Simple tool for packing Go package sources.
 
 ###############################################################################
 

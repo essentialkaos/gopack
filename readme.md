@@ -1,6 +1,6 @@
 ## GoPack
 
-`gopack` is simple tool for packing go package sources. This utility downloads package sources with all dependencies and pack into tar.bz2 archive.
+`gopack` is simple tool for packing go package sources. This utility downloads package sources with all dependencies and pack into archive.
 
 #### Usage demo
 
