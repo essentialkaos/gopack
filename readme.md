@@ -4,7 +4,7 @@
 
 #### Usage demo
 
-[![asciicast](https://asciinema.org/a/40694.png)](https://asciinema.org/a/40694)
+[![asciicast](https://asciinema.org/a/44298.png)](https://asciinema.org/a/44298)
 
 #### Installation
 
