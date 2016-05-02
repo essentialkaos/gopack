@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.0.2"
+VER="1.1.0"
 
 ########################################################################################
 
@@ -39,6 +39,8 @@ CL_BL_GREY="\e[1;${GREY};49m"
 SEPARATOR="--------------------------------------------------------------------------------"
 
 TMP_TEMPLATE="gopack-XXXXXXXX"
+
+SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
 SUPPORTED_ARGS="tmp output version revision tag branch !verbose !help !usage"
 SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch V:!verbose h:!help"
@@ -111,18 +113,20 @@ process() {
     cleanAndExit "$tmp_dir" 1
   fi
 
-  mv ${tmp_dir}/src ${tmp_dir}/${output}
-  mv ${tmp_dir}/REVISIONS ${tmp_dir}/${output}/
+  local arch_name=$(getArchName "$output")
+
+  mv ${tmp_dir}/src ${tmp_dir}/${arch_name}
+  mv ${tmp_dir}/REVISIONS ${tmp_dir}/${arch_name}/
 
   if ! packSources "$output" "$tmp_dir" ; then
     cleanAndExit "$tmp_dir" 1
   fi
 
-  cp "${tmp_dir}/${output}.tar.bz2" .
+  cp "${tmp_dir}/${output}" .
 
   [[ -z "$verbose" ]] && show ""
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}.tar.bz2${CL_NORM}"
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}"
 
   cleanAndExit "$tmp_dir"
 }
@@ -286,16 +290,37 @@ cleanPackDir() {
   find $dir -type f -name ".vexor.yml" -exec rm -f {} \; 2> /dev/null
 }
 
+# Pack source into archive
+#
+# 1: Output file (String)
+# 2: Temprary dir (String)
+#
+# Code: Yes
+# Echo: No
 packSources() {
   local output="$1"
   local tmp_dir="$2"
+
+  local arch_name=$(getArchName "$output")
+  local arch_ext=$(getArchExt "$output")
 
   showm "Packing sources... " $BOLD
 
   pushd ${tmp_dir} &> /dev/null
 
-    if ! execCmd "tar" "cjfv" "${output}.tar.bz2" "$output" ; then
-      show "Can't pack sources" $RED
+    if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
+      if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
+        show "Can't pack sources" $RED
+        return 1
+      fi
+    elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
+      if ! execCmd "tar" "cjfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
+        show "Can't pack sources" $RED
+        return 1
+      fi   
+    else
+      show "ERROR" $RED
+      show "\nUnknown archive type" $RED
       return 1
     fi
 
@@ -315,10 +340,48 @@ getOutputName() {
   local base=$(basename "$path")
 
   if [[ -n "$version" ]] ; then
-    echo "$base-$version"
+    echo "$base-$version.tar.bz2"
   else
-    echo "$base"
+    echo "$base.tar.bz2"
   fi
+}
+
+# Get archive name (without extension)
+#
+# 1: Archive name (String)
+#
+# Code: No
+# Echo: Archive name without extension (String)
+getArchName() {
+  local file_name=$(basename $1)
+  local arch_type
+
+  for arch_type in $SUPPORTED_ARCH_TYPES ; do
+    file_name=${file_name/.${arch_type}/}
+  done
+
+  echo $file_name
+}
+
+# Get archive extension
+#
+# 1: Archive name (String)
+#
+# Code: No
+# Echo: Archive extension (String)
+getArchExt() {
+  local file_name=$(basename $1)
+  local arch_type
+
+  for arch_type in $SUPPORTED_ARCH_TYPES ; do
+    if [[ $file_name =~ $arch_type ]] ; then
+      echo "$arch_type"
+      return 0
+    fi
+  done
+
+  echo ""
+  return 1
 }
 
 # Execute some command
@@ -430,7 +493,7 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}filename${CL_NORM}    Output file name (without extension)"
+  show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}filename${CL_NORM}    Output file name"
   show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_GREY}version${CL_NORM}    Package version"
   show "  ${CL_GREEN}--revision, -r${CL_NORM} ${CL_GREY}revision${CL_NORM}  Target revision (will be set after sources fetching)"
   show "  ${CL_GREEN}--branch, -b${CL_NORM} ${CL_GREY}branch${CL_NORM}      Target branch (will be set after sources fetching)"
@@ -444,12 +507,12 @@ usage() {
   show "  gopack -v 1.0.1 github.com/essentialkaos/ssllabs_client"
   show "  Pack sources for version 1.0.1 and save result as ssllabs_client-1.0.1.tar.bz2" $GREY
   show ""
-  show "  gopack -o ssllabs-client-1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  gopack -o ssllabs-client-1.0.1.tar.bz2 github.com/essentialkaos/ssllabs_client"
   show "  Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2" $GREY
   show ""
-  show "  gopack -o ssllabs-client-1.0.1 -t v1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  gopack -o ssllabs-client-1.0.1.tgz -t v1.0.1 github.com/essentialkaos/ssllabs_client"
   show "  Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result " $GREY
-  show "  as ssllabs-client-1.0.1.tar.bz2" $GREY
+  show "  as ssllabs-client-1.0.1.tgz" $GREY
   show ""
   show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $GREY
   show "Essential Kaos Open Source License <http://essentialkaos.com/ekol?en>" $GREY

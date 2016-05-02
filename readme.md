@@ -1,6 +1,6 @@
 ## GoPack
 
-`gopack` is simple tool for packing go package sources. This utility downloads package sources with all dependencies and pack into tar.bz2 archive.
+`gopack` is simple tool for packing Go package sources. This utility downloads package sources with all dependencies and pack into archive.
 
 #### Usage demo
 
@@ -30,7 +30,7 @@ Usage: gopack options package-path
 
 Options
 
-  --output, -v filename    Output file name (without extension)
+  --output, -o filename    Output file name
   --version, -v version    Package version
   --revision, -r revision  Target revision (will be set after sources fetching)
   --branch, -b branch      Target branch (will be set after sources fetching)
@@ -44,12 +44,12 @@ Examples
   gopack -v 1.0.1 github.com/essentialkaos/ssllabs_client
   Pack sources for version 1.0.1 and save result as ssllabs_client-1.0.1.tar.bz2
 
-  gopack -o ssllabs-client-1.0.1 github.com/essentialkaos/ssllabs_client
+  gopack -o ssllabs-client-1.0.1.tar.bz2 github.com/essentialkaos/ssllabs_client
   Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2
 
-  gopack -o ssllabs-client-1.0.1 -t v1.0.1 github.com/essentialkaos/ssllabs_client
+  gopack -o ssllabs-client-1.0.1.tgz -t v1.0.1 github.com/essentialkaos/ssllabs_client
   Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result 
-  as ssllabs-client-1.0.1.tar.bz2
+  as ssllabs-client-1.0.1.tgz
 
 ```
 
