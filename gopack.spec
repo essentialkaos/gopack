@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.1.0
+Version:         1.1.2
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -21,7 +21,7 @@ Provides:        %{name} = %{version}-%{release}
 ###############################################################################
 
 %description
-Simple tool for packing Go package sources.
+Simple tool for packing golang packages sources with all dependencies.
 
 ###############################################################################
 
@@ -46,6 +46,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Tue Nov 01 2016 Anton Novojilov <andy@essentialkaos.com> - 1.1.2-0
+- UI improvements
+
 * Wed Apr 27 2016 Anton Novojilov <andy@essentialkaos.com> - 1.1.0-0
 - Different output formats support
 
