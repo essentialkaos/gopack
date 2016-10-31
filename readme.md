@@ -4,7 +4,7 @@
 
 #### Usage demo
 
-[![asciicast](https://asciinema.org/a/44298.png)](https://asciinema.org/a/44298)
+[![asciicast](https://essentialkaos.com/github/gopack-112.gif)](https://asciinema.org/a/91211)
 
 #### Installation
 
