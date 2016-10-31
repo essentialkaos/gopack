@@ -4,7 +4,7 @@
 
 #### Usage demo
 
-[![asciicast](https://asciinema.org/a/44298.png)](https://asciinema.org/a/44298)
+[![asciicast](https://essentialkaos.com/github/gopack-112.gif)](https://asciinema.org/a/91211)
 
 #### Installation
 
@@ -26,7 +26,7 @@ sudo mv gopack /usr/bin/gopack
 #### Usage
 
 ```
-Usage: gopack options package-path
+Usage: gopack {options} package-path
 
 Options
 
@@ -37,6 +37,7 @@ Options
   --tag, -t tag            Target tag (will be set after sources fetching)
   --tmp, -T path           Path to temporary directory (/tmp by default)
   --verbose, -V            Verbose output
+  --about                  Show information about version
   --help, -h               Show this help message
 
 Examples
