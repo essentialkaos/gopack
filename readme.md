@@ -22,7 +22,7 @@
 [sudo] yum install gopack
 ```
 
-###### From github repo
+##### From github repo
 
 ```bash
 wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack
