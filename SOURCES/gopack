@@ -164,7 +164,7 @@ process() {
 
   [[ -z "$verbose" ]] && show ""
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}"
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}\n"
 
   cleanAndExit "$tmp_dir"
 }
