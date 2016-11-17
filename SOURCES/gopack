@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.1.2"
+VER="1.2.0"
 
 ########################################################################################
 
@@ -492,10 +492,10 @@ cleanAndExit() {
 # Code: No
 # Echo: No
 show() {
-  if [[ -n "$2" ]] ; then
-    echo -e "\e[${2}m${1}${CL_NORM}"
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e "\e[${2}m${1}\e[0m"
   else
-    echo -e "$@"
+    echo -e "$*"
   fi
 }
 
@@ -507,15 +507,11 @@ show() {
 # Code: No
 # Echo: No
 showm() {
-  local message
-
-  if [[ $2 && ! $no_colors ]] ; then
-    message=$(echo "\e["$2"m"$1"\e[0m")
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e -n "\e[${2}m${1}\e[0m"
   else
-    message="$1"
+    echo -e -n "$*"
   fi
-
-  printf "$message"
 }
 
 # Show usage info
