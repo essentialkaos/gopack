@@ -292,7 +292,7 @@ saveLatestCommitsHash() {
 
   pushd "$dir" &> /dev/null
 
-    for git_dir in $(find . -name ".git" -type d) ; do
+    while IFS= read -r -d '' git_dir ; do
 
       pushd "$git_dir" &> /dev/null
 
@@ -307,7 +307,7 @@ saveLatestCommitsHash() {
 
       popd &> /dev/null
 
-    done
+    done < <(find . -name ".git" -type d -print0)
 
   popd &> /dev/null
 }
@@ -402,7 +402,7 @@ getOutputName() {
 getArchName() {
   local file_name arch_type
 
-  file_name=$(basename $1)
+  file_name=$(basename "$1")
 
   for arch_type in $SUPPORTED_ARCH_TYPES ; do
     file_name="${file_name/.${arch_type}/}"
