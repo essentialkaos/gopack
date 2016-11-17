@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.1.2"
+VER="1.2.0"
 
 ########################################################################################
 
@@ -128,8 +128,10 @@ main() {
 # Code: No
 # Echo: No
 process() {
-  local package="$1"
-  local tmp_dir=$(mktemp -d ${tmp}/$TMP_TEMPLATE)
+  local package tmp_dir arch_name
+
+  package="$1"
+  tmp_dir=$(mktemp -d "${tmp:?}/$TMP_TEMPLATE")
 
   if [[ -z "$output" ]] ; then
     output=$(getOutputName "$package")
@@ -149,10 +151,10 @@ process() {
     cleanAndExit "$tmp_dir" 1
   fi
 
-  local arch_name=$(getArchName "$output")
+  arch_name=$(getArchName "$output")
 
-  mv ${tmp_dir}/src ${tmp_dir}/${arch_name}
-  mv ${tmp_dir}/REVISIONS ${tmp_dir}/${arch_name}/
+  mv "${tmp_dir}/src" "${tmp_dir}/${arch_name}"
+  mv "${tmp_dir}/REVISIONS" "${tmp_dir}/${arch_name}/"
 
   if ! packSources "$output" "$tmp_dir" ; then
     cleanAndExit "$tmp_dir" 1
@@ -162,7 +164,7 @@ process() {
 
   [[ -z "$verbose" ]] && show ""
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}"
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}\n"
 
   cleanAndExit "$tmp_dir"
 }
@@ -189,10 +191,12 @@ setupGoEnv() {
 # Code: No
 # Echo: No
 checkoutCode() {
-  local package="$1"
-  local tmp_dir="$2"
-  local git_path="https://$package.git"
-  local package_name=$(basename $package)
+  local package tmp_dir git_path package_name
+
+  package="$1"
+  tmp_dir="$2"
+  git_path="https://$package.git"
+  package_name=$(basename "$package")
 
   showm "Downloading sources... " $BOLD
 
@@ -251,8 +255,10 @@ checkoutCode() {
 # Code: Yes
 # Echo: No
 downloadDeps() {
-  local package="$1"
-  local tmp_dir="$2"
+  local package tmp_dir
+
+  package="$1"
+  tmp_dir="$2"
 
   showm "Downloading dependencies... " $BOLD
 
@@ -279,29 +285,29 @@ downloadDeps() {
 # Code: No
 # Echo: No
 saveLatestCommitsHash() {
-  local dir="$1"
-  local output="$2"
+  local dir output git_dir repo_dir head_hash
 
-  local git_dir
+  dir="$1"
+  output="$2"
 
-  pushd $dir &> /dev/null
+  pushd "$dir" &> /dev/null
 
-    for git_dir in $(find . -name ".git" -type d) ; do
+    while IFS= read -r -d '' git_dir ; do
 
-      pushd $git_dir &> /dev/null
+      pushd "$git_dir" &> /dev/null
 
         pushd .. &> /dev/null
 
-          local repo_dir=$(dirname ${git_dir:2:9999})
-          local head_hash=$(git rev-parse HEAD)
+          repo_dir=$(dirname "${git_dir:2:9999}")
+          head_hash=$(git rev-parse HEAD)
 
         popd &> /dev/null
 
-        echo "$head_hash $repo_dir" >> $output
+        echo "$head_hash $repo_dir" >> "$output"
 
       popd &> /dev/null
 
-    done
+    done < <(find . -name ".git" -type d -print0)
 
   popd &> /dev/null
 }
@@ -315,16 +321,16 @@ saveLatestCommitsHash() {
 cleanPackDir() {
   local dir="$1"
 
-  find $dir -type d -name ".git" -exec rm -rf {} \; 2> /dev/null
-  find $dir -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".gitattributes" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".gitmodules" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".travis.yml" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".drone.sec" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".drone.yml" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".hound.yml" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".vexor.yml" -exec rm -f {} \; 2> /dev/null
-  find $dir -type f -name ".codebeatsettings" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type d -name ".git" -exec rm -rf {} \; 2> /dev/null
+  find "$dir" -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".gitattributes" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".gitmodules" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".travis.yml" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".drone.sec" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".drone.yml" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".hound.yml" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".vexor.yml" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type f -name ".codebeatsettings" -exec rm -f {} \; 2> /dev/null
 }
 
 # Pack source into archive
@@ -335,15 +341,17 @@ cleanPackDir() {
 # Code: Yes
 # Echo: No
 packSources() {
-  local output="$1"
-  local tmp_dir="$2"
+  local output tmp_dir arch_name arch_ext
 
-  local arch_name=$(getArchName "$output")
-  local arch_ext=$(getArchExt "$output")
+  output="$1"
+  tmp_dir="$2"
+
+  arch_name=$(getArchName "$output")
+  arch_ext=$(getArchExt "$output")
 
   showm "Packing sources... " $BOLD
 
-  pushd ${tmp_dir} &> /dev/null
+  pushd "${tmp_dir}" &> /dev/null
 
     if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
@@ -373,8 +381,10 @@ packSources() {
 # Code: No
 # Echo: File name (String)
 getOutputName() {
-  local path="$1"
-  local base=$(basename "$path")
+  local path base
+
+  path="$1"
+  base=$(basename "$path")
 
   if [[ -n "$version" ]] ; then
     echo "$base-$version.tar.bz2"
@@ -390,14 +400,15 @@ getOutputName() {
 # Code: No
 # Echo: Archive name without extension (String)
 getArchName() {
-  local file_name=$(basename $1)
-  local arch_type
+  local file_name arch_type
+
+  file_name=$(basename "$1")
 
   for arch_type in $SUPPORTED_ARCH_TYPES ; do
-    file_name=${file_name/.${arch_type}/}
+    file_name="${file_name/.${arch_type}/}"
   done
 
-  echo $file_name
+  echo "$file_name"
 }
 
 # Get archive extension
@@ -407,8 +418,9 @@ getArchName() {
 # Code: No
 # Echo: Archive extension (String)
 getArchExt() {
-  local file_name=$(basename $1)
-  local arch_type
+  local file_name arch_type
+
+  file_name=$(basename "$1")
 
   for arch_type in $SUPPORTED_ARCH_TYPES ; do
     if [[ $file_name =~ $arch_type ]] ; then
@@ -437,6 +449,7 @@ execCmd() {
     show "\n$SEPARATOR\n" $GREY
   else
     $@ &> /dev/null
+    
     status=$?
 
     if [[ $status -ne 0 ]] ; then
@@ -456,8 +469,10 @@ execCmd() {
 # Code: Yes
 # Echo: No
 httpStatusOk() {
-  local url="$1"
-  local code=$(curl -ILs -o /dev/null "$url" -w '%{http_code}')
+  local url code
+
+  url="$1"
+  code=$(curl -ILs -o /dev/null "$url" -w '%{http_code}')
 
   if [[ $code -ne 200 ]] ; then
     return 1
@@ -479,7 +494,7 @@ cleanAndExit() {
 
   rm -rf "$tmp_dir"
 
-  exit $code
+  exit "$code"
 }
 
 ########################################################################################
@@ -492,10 +507,10 @@ cleanAndExit() {
 # Code: No
 # Echo: No
 show() {
-  if [[ -n "$2" ]] ; then
-    echo -e "\e[${2}m${1}${CL_NORM}"
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e "\e[${2}m${1}\e[0m"
   else
-    echo -e "$@"
+    echo -e "$*"
   fi
 }
 
@@ -507,15 +522,11 @@ show() {
 # Code: No
 # Echo: No
 showm() {
-  local message
-
-  if [[ $2 && ! $no_colors ]] ; then
-    message=$(echo "\e["$2"m"$1"\e[0m")
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e -n "\e[${2}m${1}\e[0m"
   else
-    message="$1"
+    echo -e -n "$*"
   fi
-
-  printf "$message"
 }
 
 # Show usage info
@@ -590,13 +601,13 @@ showArgWarn() {
 
 unset arg argn argm argv argt argk
 
-argv="$@" ; argt=""
+argv="$*" ; argt=""
 
 while [[ -n "$1" ]] ; do
   if [[ "$1" =~ \  && -n "$argn" ]] ; then
-    declare $argn="$1"
-    unset argn && shift && continue
+    declare "$argn=$1"
 
+    unset argn && shift && continue
   elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
     argm=${1:1}
 
@@ -610,7 +621,7 @@ while [[ -n "$1" ]] ; do
     if [[ -z "$argn" ]] ; then
       argn=$arg
     else
-      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
       argn=$arg
     fi
 
@@ -620,13 +631,12 @@ while [[ -n "$1" ]] ; do
     fi
 
     if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
-      declare $argn=true ; unset argn ; argk=true
+      declare "$argn=true" ; unset argn ; argk=true
     else
       unset argk
     fi
 
     shift && continue
-
   elif [[ "$1" =~ ^-{2}[a-zA-Z]{1}[a-zA-Z0-9_-]+.*$ ]] ; then
     arg=${1:2}
 
@@ -640,17 +650,16 @@ while [[ -n "$1" ]] ; do
         shift && continue
       fi
 
-      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare $argm="${!argm} ${arg[@]:1:99}" || declare $argm="${arg[@]:1:99}"
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[@]:1:99}" || declare "$argm=${arg[@]:1:99}"
 
       unset argm && shift && continue
-
     else
       arg=${arg//-/_}
 
       if [[ -z "$argn" ]] ; then
         argn=$arg
       else
-        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
         argn=$arg
       fi
 
@@ -660,7 +669,7 @@ while [[ -n "$1" ]] ; do
       fi
 
       if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
-        declare $argn=true ; unset argn ; argk=true
+        declare "$argn=true" ; unset argn ; argk=true
       else
         unset argk
       fi
@@ -669,7 +678,7 @@ while [[ -n "$1" ]] ; do
     fi
   else
     if [[ -n "$argn" ]] ; then
-      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare $argn="${!argn} $1" || declare $argn="$1"
+      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare "$argn=${!argn} $1" || declare "$argn=$1"
 
       unset argn && shift && continue
     fi
@@ -679,7 +688,7 @@ while [[ -n "$1" ]] ; do
 
 done
 
-[[ -n "$argn" ]] && declare $argn=true
+[[ -n "$argn" ]] && declare "$argn=true"
 
 unset arg argn argm argk
 

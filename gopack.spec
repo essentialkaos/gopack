@@ -2,12 +2,11 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.1.2
+Version:         1.2.0
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
-URL:             https://essentialkaos.com
-Vendor:          ESSENTIAL KAOS
+URL:             https://github.com/essentialkaos/gopack
 
 Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
 
@@ -46,6 +45,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Thu Nov 17 2016 Anton Novojilov <andy@essentialkaos.com> - 1.2.0-0
+- Code refactoring
+
 * Tue Nov 01 2016 Anton Novojilov <andy@essentialkaos.com> - 1.1.2-0
 - UI improvements
 
