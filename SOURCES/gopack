@@ -128,6 +128,11 @@ main() {
     fi
   fi
 
+  if [[ -n "$output" && -z $(getArchExt "$output") ]] ; then
+    show "Unsupported output format." $RED
+      exit $EC_ERROR
+  fi
+
   process "$1"
 }
 

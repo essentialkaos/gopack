@@ -47,6 +47,7 @@ rm -rf %{buildroot}
 %changelog
 * Sat Nov 26 2016 Anton Novojilov <andy@essentialkaos.com> - 1.3.0-0
 - Glide support
+- Fixed a bug with packing sources into archive without extension
 
 * Thu Nov 17 2016 Anton Novojilov <andy@essentialkaos.com> - 1.2.0-0
 - Code refactoring
