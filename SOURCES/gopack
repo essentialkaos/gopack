@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.2.0"
+VER="1.3.0"
 
 ########################################################################################
 
@@ -63,10 +63,13 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !no_colors !verbose !help 
- !usage !about"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch nc:!no_colors 
- V:!verbose h:!help"
+SUPPORTED_ARGS="tmp output version revision tag branch !glide !no_colors 
+ !verbose !help !usage !about"
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:glide
+ nc:!no_colors V:!verbose h:!help"
+
+EC_OK=0
+EC_ERROR=1
 
 # Path to temporary dir (String)
 tmp="/tmp"
@@ -90,32 +93,44 @@ main() {
 
   if [[ -n "$about" ]] ; then
     about
-    exit 0
+    exit $EC_OK
   fi
 
   if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
     usage
-    exit 0
+    exit $EC_OK
   fi
 
   if [[ -z "$tmp" ]] ; then
     show "Path to temporary directory can't be empty" $RED
-    exit 1
+    exit $EC_ERROR
   fi
 
   if [[ ! -d "$tmp" ]] ; then
     show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} is not exist${CL_NORM}"
-    exit 1
+    exit $EC_ERROR
   fi
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
     show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable${CL_NORM}"
-    exit 1
+    exit $EC_ERROR
   fi
 
-  if [[ ! $(type -P go) ]] ; then
+  if ! isAppInstalled "go" ; then
     show "This utility require go. Install it first." $RED
-    exit 1
+    exit $EC_ERROR
+  fi
+
+  if [[ -n "$glide" ]] ; then
+    if ! isAppInstalled "glide" ; then
+      show "This action require glide. Install it first." $RED
+      exit $EC_ERROR
+    fi
+  fi
+
+  if [[ -n "$output" && -z $(getArchExt "$output") ]] ; then
+    show "Unsupported output format." $RED
+      exit $EC_ERROR
   fi
 
   process "$1"
@@ -144,11 +159,17 @@ process() {
   show "DONE" $GREEN
 
   if ! checkoutCode "$package" "$tmp_dir" ; then
-    cleanAndExit "$tmp_dir" 1
+    cleanAndExit "$tmp_dir" $EC_ERROR
   fi
 
-  if ! downloadDeps "$package" "$tmp_dir" ; then
-    cleanAndExit "$tmp_dir" 1
+  if [[ -n "$glide" ]] ; then
+    if ! downloadGlideDeps "$package" "$tmp_dir" ; then
+      cleanAndExit "$tmp_dir" $EC_ERROR
+    fi
+  else
+    if ! downloadDeps "$package" "$tmp_dir" ; then
+      cleanAndExit "$tmp_dir" $EC_ERROR
+    fi
   fi
 
   arch_name=$(getArchName "$output")
@@ -157,7 +178,7 @@ process() {
   mv "${tmp_dir}/REVISIONS" "${tmp_dir}/${arch_name}/"
 
   if ! packSources "$output" "$tmp_dir" ; then
-    cleanAndExit "$tmp_dir" 1
+    cleanAndExit "$tmp_dir" $EC_ERROR
   fi
 
   cp "${tmp_dir}/${output}" .
@@ -200,7 +221,7 @@ checkoutCode() {
 
   showm "Downloading sources... " $BOLD
 
-  if ! httpStatusOk "$git_path" ; then
+  if ! isHTTPStatusOk "$git_path" ; then
     show "ERROR" $RED
     show "${CL_RED}Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible${CL_NORM}"
     return 1
@@ -265,6 +286,36 @@ downloadDeps() {
   pushd "$tmp_dir/src/$package" &> /dev/null
 
     if ! execCmd "go" "get" "-d" "-v" "./..." ; then
+      show "Can't download package dependencies" $RED
+      return 1
+    fi
+
+  popd &> /dev/null
+
+  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
+  cleanPackDir "${tmp_dir}/src"
+
+  return 0
+}
+
+# Download dependencies for given package using glide
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: Yes
+# Echo: No
+downloadGlideDeps() {
+  local package tmp_dir
+
+  package="$1"
+  tmp_dir="$2"
+
+  showm "Downloading dependencies with glide... " $BOLD
+
+  pushd "$tmp_dir/src/$package" &> /dev/null
+
+    if ! execCmd "glide" "install" ; then
       show "Can't download package dependencies" $RED
       return 1
     fi
@@ -462,13 +513,28 @@ execCmd() {
   return $status
 }
 
+# Check required dependencies
+#
+# *: Required apps
+#
+# Code: No
+# Echo: No
+isAppInstalled() {
+  for app in "$@" ; do
+    type -P "$app" &> /dev/null
+    [[ $? -eq 1 ]] && return 1
+  done
+
+  return 0
+}
+
 # Check response status code for repo url
 #
 # 1: URL (String)
 #
 # Code: Yes
 # Echo: No
-httpStatusOk() {
+isHTTPStatusOk() {
   local url code
 
   url="$1"
@@ -490,7 +556,7 @@ httpStatusOk() {
 # Echo: No
 cleanAndExit() {
   local tmp_dir="$1"
-  local code="${2:-0}"
+  local code="${2:-$EC_OK}"
 
   rm -rf "$tmp_dir"
 
@@ -546,6 +612,7 @@ usage() {
     show "  ${CL_GREEN}--branch, -b${CL_NORM} ${CL_GREY}branch${CL_NORM} ${CL_DARK}......${CL_NORM} Target branch ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
     show "  ${CL_GREEN}--tag, -t${CL_NORM} ${CL_GREY}tag${CL_NORM} ${CL_DARK}............${CL_NORM} Target tag ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
     show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}...........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
+    show "  ${CL_GREEN}--glide, -G${CL_NORM} ${CL_DARK}..............${CL_NORM} Use glide for downloading dependencies"
     show "  ${CL_GREEN}--verbose, -V${CL_NORM} ${CL_DARK}............${CL_NORM} Verbose output"
     show "  ${CL_GREEN}--about${CL_NORM} ${CL_DARK}..................${CL_NORM} Show information about version"
     show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}...............${CL_NORM} Show this help message"
@@ -556,6 +623,7 @@ usage() {
     show "  --branch, -b branch        Target branch (will be set after sources fetching)"
     show "  --tag, -t tag              Target tag (will be set after sources fetching)"
     show "  --tmp, -T path             Path to temporary directory (/tmp by default)"
+    show "  --glide, -G                Use glide for downloading dependencies"
     show "  --verbose, -V              Verbose output"
     show "  --about                    Show information about version"
     show "  --help, -h                 Show this help message"
