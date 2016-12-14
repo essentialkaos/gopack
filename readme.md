@@ -4,7 +4,7 @@
 
 ### Usage demo
 
-![demo](https://gh.kaos.io/gopack-112.gif)
+[![demo](https://gh.kaos.io/gopack-112.gif)](#usage-demo)
 
 ### Installation
 
