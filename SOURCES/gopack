@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.3.0"
+VER="1.3.1"
 
 ########################################################################################
 
@@ -647,8 +647,8 @@ about() {
   show ""
   show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Simple tool for packing golang packages sources with all dependencies"
   show ""
-  show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $DARK
-  show "Essential Kaos Open Source License <http://essentialkaos.com/ekol>" $DARK
+  show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
+  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol>" $DARK
   show ""
 }
 
