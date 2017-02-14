@@ -1,4 +1,4 @@
-## GoPack [![Code Climate](https://codeclimate.com/github/essentialkaos/gopack/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/gopack)
+## GoPack [![Code Climate](https://codeclimate.com/github/essentialkaos/gopack/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/gopack) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
 
 `gopack` is simple tool for packing Go package sources. This utility downloads package sources with all dependencies and pack into archive.
 
