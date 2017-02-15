@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.3.0
+Version:         1.3.1
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -45,6 +45,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Wed Feb 15 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.1-0
+- Improved version output
+
 * Sat Nov 26 2016 Anton Novojilov <andy@essentialkaos.com> - 1.3.0-0
 - Glide support
 - Fixed a bug with packing sources into archive without extension

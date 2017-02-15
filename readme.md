@@ -1,4 +1,4 @@
-## GoPack [![Code Climate](https://codeclimate.com/github/essentialkaos/gopack/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/gopack)
+## GoPack [![Code Climate](https://codeclimate.com/github/essentialkaos/gopack/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/gopack) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
 
 `gopack` is simple tool for packing Go package sources. This utility downloads package sources with all dependencies and pack into archive.
 
@@ -8,27 +8,30 @@
 
 ### Installation
 
-##### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
-
+<details>
+<summary><strong>From ESSENTIAL KAOS Public repo for RHEL6/CentOS6</strong></summary>
 ```
 [sudo] yum install -y https://yum.kaos.io/6/release/i386/kaos-repo-7.2-0.el6.noarch.rpm
 [sudo] yum install gopack
 ```
+</details>
 
-##### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
-
+<details>
+<summary><strong>From ESSENTIAL KAOS Public repo for RHEL7/CentOS7</strong></summary>
 ```
 [sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-7.2-0.el7.noarch.rpm
 [sudo] yum install gopack
 ```
+</details>
 
-##### From github repo
-
+<details>
+<summary><strong>From github repo</strong></summary>
 ```bash
 wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack
 chmod +x gopack
 sudo mv gopack /usr/bin/gopack
 ```
+</details>
 
 ### Usage
 
