@@ -134,8 +134,8 @@ process() {
   fi
 
   # Allow redirects for stable import services
-  git config --global http.https://pkg.re.followRedirects true
-  git config --global http.https://gopkg.in.followRedirects true
+  git config --global http.https://pkg.re.followRedirects true &> /dev/null
+  git config --global http.https://gopkg.in.followRedirects true &> /dev/null
 
   showm "Setting temporary Go environment variables... " $BOLD
 
