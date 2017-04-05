@@ -8,30 +8,28 @@
 
 ### Installation
 
-<details>
-<summary><strong>From ESSENTIAL KAOS Public repo for RHEL6/CentOS6</strong></summary>
+#### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
+
 ```
-[sudo] yum install -y https://yum.kaos.io/6/release/i386/kaos-repo-7.2-0.el6.noarch.rpm
+[sudo] yum install -y https://yum.kaos.io/6/release/x86_64/kaos-repo-8.0-0.el6.noarch.rpm
 [sudo] yum install gopack
 ```
-</details>
 
-<details>
-<summary><strong>From ESSENTIAL KAOS Public repo for RHEL7/CentOS7</strong></summary>
+#### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
+
 ```
-[sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-7.2-0.el7.noarch.rpm
+[sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-8.0-0.el7.noarch.rpm
 [sudo] yum install gopack
 ```
-</details>
 
-<details>
-<summary><strong>From github repo</strong></summary>
+#### From github repo
+
 ```bash
 wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack
 chmod +x gopack
 sudo mv gopack /usr/bin/gopack
 ```
-</details>
+
 
 ### Usage
 
