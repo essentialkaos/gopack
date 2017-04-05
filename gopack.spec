@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.3.3
+Version:         1.3.4
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -45,6 +45,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Wed Apr 05 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.4-0
+- Fixed output to stderr for a message about an unsupported argument
+
 * Wed Apr 05 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.3-0
 - Output errors to stderr
 
