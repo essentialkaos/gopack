@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.3.2"
+VER="1.3.3"
 
 ########################################################################################
 
@@ -83,35 +83,35 @@ main() {
   fi
 
   if [[ -z "$tmp" ]] ; then
-    show "Path to temporary directory can't be empty" $RED
+    error "Path to temporary directory can't be empty" $RED
     exit $EC_ERROR
   fi
 
   if [[ ! -d "$tmp" ]] ; then
-    show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} is not exist${CL_NORM}"
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} is not exist" $RED
     exit $EC_ERROR
   fi
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
-    show "${CL_RED}Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable${CL_NORM}"
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable" $RED
     exit $EC_ERROR
   fi
 
   if ! isAppInstalled "go" ; then
-    show "This utility require go. Install it first." $RED
+    error "This utility require go. Install it first." $RED
     exit $EC_ERROR
   fi
 
   if [[ -n "$glide" ]] ; then
     if ! isAppInstalled "glide" ; then
-      show "This action require glide. Install it first." $RED
+      error "This action require glide. Install it first." $RED
       exit $EC_ERROR
     fi
   fi
 
   if [[ -n "$output" && -z $(getArchExt "$output") ]] ; then
-    show "Unsupported output format." $RED
-      exit $EC_ERROR
+    error "Unsupported output format" $RED
+    exit $EC_ERROR
   fi
 
   process "$1"
@@ -208,14 +208,14 @@ checkoutCode() {
 
   if ! isHTTPStatusOk "$git_path" ; then
     show "ERROR" $RED
-    show "${CL_RED}Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible${CL_NORM}"
+    error "Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible" $RED
     return 1
   fi
 
   mkdir -p "$tmp_dir/src/$package"
 
   if ! execCmd "git" "clone" "$git_path" "$tmp_dir/src/$package/" ; then
-    show "${CL_RED}Error while cloning repository ${CL_BL_RED}${git_path}${CL_NORM}" $RED
+    error "Error while cloning repository ${CL_BL_RED}${git_path}" $RED
     return 1
   fi
 
@@ -225,7 +225,7 @@ checkoutCode() {
       showm "Switching HEAD to revision $revision... " $BOLD
 
       if ! execCmd "git" "checkout" "$revision" ; then
-        show "${CL_RED}Can't checkout revision ${CL_BL_RED}${revision}${CL_NORM}" $RED
+        error "Can't checkout revision ${CL_BL_RED}${revision}" $RED
         return 1
       fi
     fi
@@ -234,7 +234,7 @@ checkoutCode() {
       showm "Switching HEAD to branch $branch... " $BOLD
 
       if ! execCmd "git" "checkout" "$branch" ; then
-        show "${CL_RED}Can't checkout branch ${CL_BL_RED}${branch}${CL_NORM}" $RED
+        error "Can't checkout branch ${CL_BL_RED}${branch}" $RED
         return 1
       fi
     fi
@@ -243,7 +243,7 @@ checkoutCode() {
       showm "Switching HEAD to tag $tag... " $BOLD
 
       if ! execCmd "git" "checkout" "$tag" ; then
-        show "${CL_RED}Can't checkout tag ${CL_BL_RED}${tag}${CL_NORM}" $RED
+        error "Can't checkout tag ${CL_BL_RED}${tag}" $RED
         return 1
       fi
     fi
@@ -271,7 +271,7 @@ downloadDeps() {
   pushd "$tmp_dir/src/$package" &> /dev/null
 
     if ! execCmd "go" "get" "-d" "-v" "./..." ; then
-      show "Can't download package dependencies" $RED
+      error "Can't download package dependencies" $RED
       return 1
     fi
 
@@ -301,7 +301,7 @@ downloadGlideDeps() {
   pushd "$tmp_dir/src/$package" &> /dev/null
 
     if ! execCmd "glide" "install" ; then
-      show "Can't download package dependencies" $RED
+      error "Can't download package dependencies" $RED
       return 1
     fi
 
@@ -391,17 +391,17 @@ packSources() {
 
     if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        show "Can't pack sources" $RED
+        error "Can't pack sources" $RED
         return 1
       fi
     elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
       if ! execCmd "tar" "cjfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        show "Can't pack sources" $RED
+        error "Can't pack sources" $RED
         return 1
       fi   
     else
-      show "ERROR" $RED
-      show "\nUnknown archive type" $RED
+      show "ERROR\n" $RED
+      error "Unknown archive type" $RED
       return 1
     fi
 
@@ -578,6 +578,17 @@ showm() {
   else
     echo -e -n "$*"
   fi
+}
+
+# Print error message
+#
+# 1: Message (String)
+# 2: Message color (Number) [Optional]
+#
+# Code: No
+# Echo: No
+error() {
+  show "$@" 1>&2
 }
 
 # Show usage info
