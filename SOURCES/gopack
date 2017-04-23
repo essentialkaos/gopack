@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="gopack"
-VER="1.3.4"
+VER="1.4.0"
 
 ########################################################################################
 
@@ -47,7 +47,7 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
 SUPPORTED_ARGS="tmp output version revision tag branch !glide !no_colors 
- !verbose !help !usage !about"
+ !verbose !help !usage"
 SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:glide
  nc:!no_colors V:!verbose h:!help"
 
@@ -56,6 +56,10 @@ EC_ERROR=1
 
 # Path to temporary dir (String)
 tmp="/tmp"
+
+# -
+# Temporary directory for sources
+tmp_dir=""
 
 ########################################################################################
 
@@ -124,7 +128,7 @@ main() {
 # Code: No
 # Echo: No
 process() {
-  local package tmp_dir arch_name
+  local package arch_name
 
   package="$1"
   tmp_dir=$(mktemp -d "${tmp:?}/$TMP_TEMPLATE")
@@ -137,6 +141,8 @@ process() {
   git config --global http.https://pkg.re.followRedirects true &> /dev/null
   git config --global http.https://gopkg.in.followRedirects true &> /dev/null
 
+  trap termExit SIGINT SIGQUIT SIGTERM
+
   showm "Setting temporary Go environment variables... " $BOLD
 
   setupGoEnv "$tmp_dir"
@@ -144,16 +150,16 @@ process() {
   show "DONE" $GREEN
 
   if ! checkoutCode "$package" "$tmp_dir" ; then
-    cleanAndExit "$tmp_dir" $EC_ERROR
+    cleanAndExit $EC_ERROR
   fi
 
   if [[ -n "$glide" ]] ; then
     if ! downloadGlideDeps "$package" "$tmp_dir" ; then
-      cleanAndExit "$tmp_dir" $EC_ERROR
+      cleanAndExit $EC_ERROR
     fi
   else
     if ! downloadDeps "$package" "$tmp_dir" ; then
-      cleanAndExit "$tmp_dir" $EC_ERROR
+      cleanAndExit $EC_ERROR
     fi
   fi
 
@@ -163,7 +169,7 @@ process() {
   mv "${tmp_dir}/REVISIONS" "${tmp_dir}/${arch_name}/"
 
   if ! packSources "$output" "$tmp_dir" ; then
-    cleanAndExit "$tmp_dir" $EC_ERROR
+    cleanAndExit $EC_ERROR
   fi
 
   cp "${tmp_dir}/${output}" .
@@ -172,7 +178,7 @@ process() {
 
   show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}\n"
 
-  cleanAndExit "$tmp_dir"
+  cleanAndExit
 }
 
 # Make directory for go sources and set GOPATH environment variable
@@ -180,13 +186,13 @@ process() {
 # Code: No
 # Echo: No
 setupGoEnv() {
-  local tmp_dir="$1"
+  local target_dir="$1"
 
-  mkdir "$tmp_dir/src"
-  mkdir "$tmp_dir/pkg"
-  mkdir "$tmp_dir/bin"
+  mkdir "$target_dir/src"
+  mkdir "$target_dir/pkg"
+  mkdir "$target_dir/bin"
 
-  export GOPATH="$tmp_dir"
+  export GOPATH="$target_dir"
 }
 
 # Checkout source code
@@ -540,12 +546,21 @@ isHTTPStatusOk() {
 # Code: No
 # Echo: No
 cleanAndExit() {
-  local tmp_dir="$1"
-  local code="${2:-$EC_OK}"
+  local code="${1:-$EC_OK}"
 
-  rm -rf "$tmp_dir"
+  if [[ -e "$tmp_dir" ]] ; then
+    rm -rf "$tmp_dir"
+  fi
 
   exit "$code"
+}
+
+# INT/QUIT/TERM signal handler
+#
+# Code: No
+# Echo: No
+termExit() {
+  cleanAndExit $EC_ERROR
 }
 
 ########################################################################################
@@ -597,6 +612,8 @@ error() {
 # Echo: No
 usage() {
   show ""
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Simple tool for packing golang packages sources with all dependencies"
+  show ""
   show "${CL_BOLD}Usage:${CL_NORM} gopack ${CL_GREEN}{options}${CL_NORM} package-path"
   show ""
   show "Options" $BOLD
@@ -636,12 +653,6 @@ usage() {
   show "  gopack -o ssllabs-client-1.0.1.tgz -t v1.0.1 github.com/essentialkaos/ssllabs_client"
   show "  Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result " $DARK
   show "  as ssllabs-client-1.0.1.tgz" $DARK
-  show ""
-}
-
-about() {
-  show ""
-  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Simple tool for packing golang packages sources with all dependencies"
   show ""
   show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
   show "Essential Kaos Open Source License <https://essentialkaos.com/ekol>" $DARK
