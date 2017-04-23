@@ -2,7 +2,7 @@
 
 ########################################################################################
 
-APP="gopack"
+APP="GoPack"
 VER="1.4.0"
 
 ########################################################################################
@@ -76,23 +76,27 @@ main() {
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
   fi
 
-  if [[ -n "$about" ]] ; then
-    about
-    exit $EC_OK
-  fi
-
   if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
     usage
     exit $EC_OK
   fi
 
+  prepare
+  process "$1"
+}
+
+# Check properties and arguments
+#
+# Code: No
+# Echo: No
+prepare() {
   if [[ -z "$tmp" ]] ; then
     error "Path to temporary directory can't be empty" $RED
     exit $EC_ERROR
   fi
 
   if [[ ! -d "$tmp" ]] ; then
-    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} is not exist" $RED
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist" $RED
     exit $EC_ERROR
   fi
 
@@ -103,6 +107,11 @@ main() {
 
   if ! isAppInstalled "go" ; then
     error "This utility require go. Install it first." $RED
+    exit $EC_ERROR
+  fi
+
+  if ! isAppInstalled "curl" ; then
+    error "This utility require curl. Install it first." $RED
     exit $EC_ERROR
   fi
 
@@ -117,8 +126,6 @@ main() {
     error "Unsupported output format" $RED
     exit $EC_ERROR
   fi
-
-  process "$1"
 }
 
 # Download and pack sources
@@ -131,7 +138,8 @@ process() {
   local package arch_name
 
   package="$1"
-  tmp_dir=$(mktemp -d "${tmp:?}/$TMP_TEMPLATE")
+  
+  makeTempDir
 
   if [[ -z "$output" ]] ; then
     output=$(getOutputName "$package")
@@ -179,6 +187,19 @@ process() {
   show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}\n"
 
   cleanAndExit
+}
+
+# Create temporary directory
+#
+# Code: No
+# Echo: No
+makeTempDir() {
+  tmp_dir=$(mktemp -d "${tmp:?}/$TMP_TEMPLATE")
+
+  if [[ ! -d "$tmp_dir" ]] ; then
+    error "Can't create temporary directory"
+    exit $EC_ERROR
+  fi
 }
 
 # Make directory for go sources and set GOPATH environment variable
@@ -627,7 +648,7 @@ usage() {
     show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}...........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
     show "  ${CL_GREEN}--glide, -G${CL_NORM} ${CL_DARK}..............${CL_NORM} Use glide for downloading dependencies"
     show "  ${CL_GREEN}--verbose, -V${CL_NORM} ${CL_DARK}............${CL_NORM} Verbose output"
-    show "  ${CL_GREEN}--about${CL_NORM} ${CL_DARK}..................${CL_NORM} Show information about version"
+    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}.........${CL_NORM} Disable colors in output"
     show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}...............${CL_NORM} Show this help message"
   else
     show "  --output, -o filename      Output file name"
@@ -638,7 +659,7 @@ usage() {
     show "  --tmp, -T path             Path to temporary directory (/tmp by default)"
     show "  --glide, -G                Use glide for downloading dependencies"
     show "  --verbose, -V              Verbose output"
-    show "  --about                    Show information about version"
+    show "  --no-color, -nc            Disable colors in output"
     show "  --help, -h                 Show this help message"
   fi
   show ""
@@ -670,7 +691,7 @@ showArgWarn() {
   exit 1
 }
 
-## ARGUMENTS PARSING 2 #################################################################
+## ARGUMENTS PARSING 3 #################################################################
 
 [[ $# -eq 0 ]] && main && exit $?
 
@@ -689,19 +710,19 @@ while [[ -n "$1" ]] ; do
     if [[ \ $SHORT_ARGS\  =~ \ $argm:!?([a-zA-Z0-9_]*) ]] ; then
       arg="${BASH_REMATCH[1]}"
     else
-      showArgWarn "-$argm" 2> /dev/null || :
+      declare -F showArgWarn &>/dev/null && showArgWarn "-$argm"
       shift && continue
     fi
 
     if [[ -z "$argn" ]] ; then
       argn=$arg
     else
-      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
+      [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
       argn=$arg
     fi
 
     if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
-      showArgWarn "-$argm" 2> /dev/null || :
+      declare -F showArgWarn &>/dev/null && showArgWarn "-$argm"
       shift && continue
     fi
 
@@ -721,7 +742,7 @@ while [[ -n "$1" ]] ; do
       argm="${arg[0]}" ; argm=${argm//-/_}
 
       if [[ ! $SUPPORTED_ARGS\  =~ $argm\  ]] ; then
-        showArgWarn "--${arg[0]//_/-}" 2> /dev/null || :
+        declare -F showArgWarn &>/dev/null && showArgWarn "--${arg[0]//_/-}"
         shift && continue
       fi
 
@@ -734,12 +755,12 @@ while [[ -n "$1" ]] ; do
       if [[ -z "$argn" ]] ; then
         argn=$arg
       else
-        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
+        [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
         argn=$arg
       fi
 
       if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
-        showArgWarn "--${argn//_/-}" 2> /dev/null || :
+        declare -F showArgWarn &>/dev/null && showArgWarn "--${argn//_/-}"
         shift && continue
       fi
 

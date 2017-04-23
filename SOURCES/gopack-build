@@ -1,0 +1,646 @@
+#!/usr/bin/env bash
+
+########################################################################################
+
+APP="GoPack Build"
+VER="1.0.0"
+
+########################################################################################
+
+NORM=0
+BOLD=1
+UNLN=4
+RED=31
+GREEN=32
+YELLOW=33
+BLUE=34
+MAG=35
+CYAN=36
+GREY=37
+DARK=90
+
+CL_NORM="\e[0m"
+CL_BOLD="\e[0;${BOLD};49m"
+CL_UNLN="\e[0;${UNLN};49m"
+CL_RED="\e[0;${RED};49m"
+CL_GREEN="\e[0;${GREEN};49m"
+CL_YELLOW="\e[0;${YELLOW};49m"
+CL_BLUE="\e[0;${BLUE};49m"
+CL_MAG="\e[0;${MAG};49m"
+CL_CYAN="\e[0;${CYAN};49m"
+CL_GREY="\e[0;${GREY};49m"
+CL_DARK="\e[0;${DARK};49m"
+CL_BL_RED="\e[1;${RED};49m"
+CL_BL_GREEN="\e[1;${GREEN};49m"
+CL_BL_YELLOW="\e[1;${YELLOW};49m"
+CL_BL_BLUE="\e[1;${BLUE};49m"
+CL_BL_MAG="\e[1;${MAG};49m"
+CL_BL_CYAN="\e[1;${CYAN};49m"
+CL_BL_GREY="\e[1;${GREY};49m"
+
+########################################################################################
+
+TMP_TEMPLATE="gopack-build-XXXXXXXX"
+
+SUPPORTED_ARGS="tmp output !no_colors !version !help !usage"
+SHORT_ARGS="T:tmp o:output nc:!no_colors v:!version h:!help"
+
+SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
+
+EC_OK=0
+EC_ERROR=1
+
+########################################################################################
+
+# Path to temporary dir (String)
+tmp="/tmp"
+
+# -
+# Temporary directory for sources
+tmp_dir=""
+
+########################################################################################
+
+main() {
+  if [[ ! -t 1 || -n "$no_colors" ]] ; then
+    unset NORM BOLD UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
+    unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
+    unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
+  fi
+
+  if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
+    usage
+    exit $EC_OK
+  fi
+
+  if [[ -n "$version" ]] ; then
+    about
+    exit $EC_OK
+  fi
+
+  prepare
+  process "$@"
+}
+
+# Check properties and arguments
+#
+# Code: No
+# Echo: No
+prepare() {
+  if [[ -z "$tmp" ]] ; then
+    error "Path to temporary directory can't be empty" $RED
+    exit $EC_ERROR
+  fi
+
+  if [[ ! -d "$tmp" ]] ; then
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist" $RED
+    exit $EC_ERROR
+  fi
+
+  if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable" $RED
+    exit $EC_ERROR
+  fi
+
+  if [[ -n "$output" ]] ; then
+    if [[ ! -d "$output" ]] ; then
+      error "Output directory ${CL_BL_RED}${output}${CL_RED} doesn't exist" $RED
+      exit $EC_ERROR
+    fi
+
+    if [[ ! -w "$output" || ! -x "$output" ]] ; then
+      error "Output directory ${CL_BL_RED}${output}${CL_RED} must be writable and executable" $RED
+      exit $EC_ERROR
+    fi
+  fi
+
+  if ! isAppInstalled "go" ; then
+    error "This utility require go. Install it first." $RED
+    exit $EC_ERROR
+  fi
+
+  if ! isAppInstalled "curl" ; then
+    error "This utility require curl. Install it first." $RED
+    exit $EC_ERROR
+  fi
+}
+
+# Start source processing
+#
+# 1: Source file (String)
+#
+# Code: No
+# Echo: No
+process() {
+  local src="$1"
+  local src_name=$(basename "$src")
+
+  makeTempDir
+
+  if isURL "$src" ; then
+    downloadSources "$src"
+  else
+    if [[ ! -e "$src" ]] ; then
+      error "File $src doesn't exist"
+      cleanAndExit $EC_ERROR
+    fi
+    
+    cp "$src" "$tmp_dir/"
+  fi
+
+  unpackSources "$src_name"
+  buildBinaries "$src_name"
+
+  cleanAndExit $EC_OK
+}
+
+# Download remote source
+#
+# 1: URL (String)
+#
+# Code: No
+# Echo: No
+downloadSources() {
+  local url="$1"
+
+  if ! isAccessibleUrl "$url" ; then
+    error "Can't download sources - server return error code" $RED
+    cleanAndExit $EC_ERROR
+  fi
+
+  local file_name
+  file_name=$(basename "$url")
+
+  show "Dowloading sources..."
+
+  curl -L --max-redirs 10 --progress-bar "$url" -o "$tmp_dir/$file_name"
+
+  if [[ $? -ne 0 ]] ; then
+    cleanAndExit $EC_ERROR
+  fi
+}
+
+# Build all binaries
+#
+# 1: Source name (String)
+#
+# Code: No
+# Echo: No
+buildBinaries() {
+  local src_name="$1"
+  local binaries binary binary_name pkg_name
+  local build_log="$tmp_dir/build.log"
+
+  pkg_name=$(getArchName "$src_name")
+
+  setupGoEnv "$tmp_dir"
+
+  mv $tmp_dir/$pkg_name/* $tmp_dir/src/
+  
+  binaries=$(findBinaries "$tmp_dir")
+
+  if [[ -z "$binaries" ]] ; then
+    error "Can't find any binaries for build" $YELLOW
+    cleanAndExit $EC_ERROR
+  fi
+
+  if [[ -z "$output" ]] ; then
+    output="."
+  fi
+
+  show "Building binaries..."
+
+  for binary in $binaries ; do
+    binary_name=$(basename "$binary")
+    binary_name="${binary_name//.go/}"
+
+    showm " ${CL_DARK}•${CL_NORM} $binary_name "
+
+    go build -o "$output/$binary_name" "$binary" &> $build_log
+
+    if [[ $? -ne 0 ]] ; then
+      show "✖ \n" $RED
+      cat $build_log
+      show ""
+      error "Can't build binary" $RED
+      cleanAndExit
+    fi
+
+    show "✔ " $GREEN
+  done
+
+  show ""
+  
+  if [[ "$output" == "." ]] ; then
+    show "All binaries saved to current directory" $GREEN
+  else
+    show "All binaries saved to $output" $GREEN
+  fi
+}
+
+# Make directory for go sources and set GOPATH environment variable
+#
+# Code: No
+# Echo: No
+setupGoEnv() {
+  local target_dir="$1"
+
+  mkdir "$target_dir/src"
+  mkdir "$target_dir/pkg"
+  mkdir "$target_dir/bin"
+
+  export GOPATH="$target_dir"
+}
+
+# Find sources for binary files
+#
+# 1: Path to directory with sources (String)
+#
+# Code: No
+# Echo: No
+findBinaries() {
+  grep --include='*.go' -rn '^package main$' "$1" 2>/dev/null | cut -f1 -d':'
+}
+
+unpackSources() {
+  local src_name="$1"
+  local has_errors arch_ext
+
+  arch_ext=$(getArchExt "$src_name")
+
+  showm "Unpacking sources... "
+
+  pushd $tmp_dir &> /dev/null
+
+  if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
+    tar czf "$src_name"
+
+    if [[ $? -ne 0 ]] ; then
+      show "ERROR\n" $RED
+      error "Can't unpack sources archive" $RED
+      has_errors=true
+    fi
+  elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
+    tar jxf "$src_name"
+
+    if [[ $? -ne 0 ]] ; then
+      show "ERROR\n" $RED
+      error "Can't unpack sources archive" $RED
+      has_errors=true
+    fi
+  else
+    show "ERROR\n" $RED
+    error "Unknown archive type" $RED
+    has_errors=true
+  fi
+
+  if [[ -z "$has_errors" && $? -ne 0 ]] ; then
+    has_errors=true
+  fi
+
+  popd &> /dev/null
+
+  if [[ -n "$has_errors" ]] ; then
+    cleanAndExit $EC_ERROR
+  fi
+
+  show "DONE" $GREEN
+}
+
+# Get archive name (without extension)
+#
+# 1: Archive name (String)
+#
+# Code: No
+# Echo: Archive name without extension (String)
+getArchName() {
+  local file_name arch_type
+
+  file_name=$(basename "$1")
+
+  for arch_type in $SUPPORTED_ARCH_TYPES ; do
+    file_name="${file_name/.${arch_type}/}"
+  done
+
+  echo "$file_name"
+}
+
+# Get archive extension
+#
+# 1: Archive name (String)
+#
+# Code: No
+# Echo: Archive extension (String)
+getArchExt() {
+  local file_name arch_type
+
+  file_name=$(basename "$1")
+
+  for arch_type in $SUPPORTED_ARCH_TYPES ; do
+    if [[ $file_name =~ $arch_type ]] ; then
+      echo "$arch_type"
+      return 0
+    fi
+  done
+
+  echo ""
+  return 1
+}
+
+# Create temporary directory
+#
+# Code: No
+# Echo: No
+makeTempDir() {
+  tmp_dir=$(mktemp -d "${tmp:?}/$TMP_TEMPLATE")
+
+  if [[ ! -d "$tmp_dir" ]] ; then
+    error "Can't create temporary directory"
+    exit $EC_ERROR
+  fi
+}
+
+# Check required dependencies
+#
+# *: Required apps
+#
+# Code: No
+# Echo: No
+isAppInstalled() {
+  for app in "$@" ; do
+    type -P "$app" &> /dev/null
+    [[ $? -eq 1 ]] && return 1
+  done
+
+  return 0
+}
+
+# Check response status code for repo url
+#
+# 1: URL (String)
+#
+# Code: Yes
+# Echo: No
+isAccessibleUrl() {
+  local status code nosniff size
+
+  if [[ "$1" =~ http:|https: ]] ; then
+    status=$(curl -LIs --max-redirs 10 -X GET "$1")
+    code=$(echo -e "$status" | grep "HTTP" | cut -f2 -d" " | tail -1)
+    nosniff=$(echo -e "$status" | grep "X-Content-Type-Options: nosniff")
+
+    # Nosniff mode works on Google Code, if we simple try check status server return
+    # code 404, but we can download this file
+    [[ -n $nosniff || "$code" == "200" ]] && return 0 || return 1
+  elif [[ "$1" =~ ftp: ]] ; then
+    status=$(curl "$1" -Is)
+    size=$(echo "$status" | grep "Content-Length" | cut -f2 -d" ")
+
+    [[ -n "$size" ]] && return 0 || return 1
+  else
+    return 1
+  fi
+}
+
+# Check if given value is URL
+#
+# 1: URL (String)
+#
+# Code: Yes
+# Echo: No
+isURL() {
+  if [[ "${1:0:5}" == "https" || "${1:0:4}" == "http" ]] ; then
+    return 0
+  fi
+
+  return 1
+}
+
+# Clean temporary data and exit with given exit code
+#
+# 1: Path to temporary dir (String)
+# 2: Exit code (Number) [Optional]
+#
+# Code: No
+# Echo: No
+cleanAndExit() {
+  local code="${1:-$EC_OK}"
+
+  if [[ -e "$tmp_dir" ]] ; then
+    rm -rf "$tmp_dir"
+  fi
+
+  exit "$code"
+}
+
+# INT/QUIT/TERM signal handler
+#
+# Code: No
+# Echo: No
+termExit() {
+  cleanAndExit $EC_ERROR
+}
+
+########################################################################################
+
+# Print message to console
+#
+# 1: Message (String)
+# 2: Color (Number) [Optional]
+#
+# Code: No
+# Echo: No
+show() {
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e "\e[${2}m${1}\e[0m"
+  else
+    echo -e "$*"
+  fi
+}
+
+# Print message without new line symbol to console
+#
+# 1: Message (String)
+# 2: Color (Number) [Optional]
+#
+# Code: No
+# Echo: No
+showm() {
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e -n "\e[${2}m${1}\e[0m"
+  else
+    echo -e -n "$*"
+  fi
+}
+
+# Print error message
+#
+# 1: Message (String)
+# 2: Message color (Number) [Optional]
+#
+# Code: No
+# Echo: No
+error() {
+  show "$@" 1>&2
+}
+
+
+# Show usage info
+#
+# Code: No
+# Echo: No
+usage() {
+  show ""
+  show "${CL_BOLD}Usage:${CL_NORM} gopack-build ${CL_GREEN}{options}${CL_NORM} file"
+  show ""
+  show "Options" $BOLD
+  show ""
+  if [[ -n "$DARK" ]] ; then
+    show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}directory${CL_NORM} ${CL_DARK}..${CL_NORM} Output directory"
+    show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}..........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
+    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}.........${CL_NORM} Disable colors in output"
+    show "  ${CL_GREEN}--about${CL_NORM} ${CL_DARK}.................${CL_NORM} Show information about version"
+    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}..............${CL_NORM} Show this help message"
+  else
+    show "  --output, -o directory     Output directory"
+    show "  --tmp, -T path             Path to temporary directory (/tmp by default)"
+    show "  --no-color, -nc            Disable colors in output"
+    show "  --about                    Show information about version"
+    show "  --help, -h                 Show this help message"
+  fi
+  show ""
+  show "Examples" $BOLD
+  show ""
+  show "  gopack yo-0.2.0.tar.bz2"
+  show "  Build binary from local archive with sources" $DARK
+  show ""
+  show "  gopack -o /home/user https://github.com/essentialkaos/yo/releases/download/v0.2.0/yo-0.2.0.tar.bz2"
+  show "  Build binary from remote archive with sources and save result" $DARK
+  show "  to directory /home/user" $DARK
+  show ""
+}
+
+# Show info about version
+#
+# Code: No
+# Echo: No
+about() {
+  show ""
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Simple tool for building binaries from source archive"
+  show ""
+  show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
+  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol>" $DARK
+  show ""
+}
+
+# Print message about unsupported argument
+#
+# 1: Argument (String)
+#
+# Code: No
+# Echo: No
+showArgWarn() {
+  error "Unknown argument $1" $RED
+  exit 1
+}
+
+## ARGUMENTS PARSING 3 #################################################################
+
+[[ $# -eq 0 ]] && main && exit $?
+
+unset arg argn argm argv argt argk
+
+argv="$*" ; argt=""
+
+while [[ -n "$1" ]] ; do
+  if [[ "$1" =~ \  && -n "$argn" ]] ; then
+    declare "$argn=$1"
+
+    unset argn && shift && continue
+  elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
+    argm=${1:1}
+
+    if [[ \ $SHORT_ARGS\  =~ \ $argm:!?([a-zA-Z0-9_]*) ]] ; then
+      arg="${BASH_REMATCH[1]}"
+    else
+      declare -F showArgWarn &>/dev/null && showArgWarn "-$argm"
+      shift && continue
+    fi
+
+    if [[ -z "$argn" ]] ; then
+      argn=$arg
+    else
+      [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
+      argn=$arg
+    fi
+
+    if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+      declare -F showArgWarn &>/dev/null && showArgWarn "-$argm"
+      shift && continue
+    fi
+
+    if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+      declare "$argn=true" ; unset argn ; argk=true
+    else
+      unset argk
+    fi
+
+    shift && continue
+  elif [[ "$1" =~ ^-{2}[a-zA-Z]{1}[a-zA-Z0-9_-]+.*$ ]] ; then
+    arg=${1:2}
+
+    if [[ $arg == *=* ]] ; then
+      IFS="=" read -ra arg <<< "$arg"
+
+      argm="${arg[0]}" ; argm=${argm//-/_}
+
+      if [[ ! $SUPPORTED_ARGS\  =~ $argm\  ]] ; then
+        declare -F showArgWarn &>/dev/null && showArgWarn "--${arg[0]//_/-}"
+        shift && continue
+      fi
+
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[@]:1:99}" || declare "$argm=${arg[@]:1:99}"
+
+      unset argm && shift && continue
+    else
+      arg=${arg//-/_}
+
+      if [[ -z "$argn" ]] ; then
+        argn=$arg
+      else
+        [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
+        argn=$arg
+      fi
+
+      if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+        declare -F showArgWarn &>/dev/null && showArgWarn "--${argn//_/-}"
+        shift && continue
+      fi
+
+      if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+        declare "$argn=true" ; unset argn ; argk=true
+      else
+        unset argk
+      fi
+
+      shift && continue
+    fi
+  else
+    if [[ -n "$argn" ]] ; then
+      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare "$argn=${!argn} $1" || declare "$argn=$1"
+
+      unset argn && shift && continue
+    fi
+  fi
+
+  argt="$argt $1" ; shift
+
+done
+
+[[ -n "$argn" ]] && declare "$argn=true"
+
+unset arg argn argm argk
+
+[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
+
+########################################################################################
