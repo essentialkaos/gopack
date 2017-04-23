@@ -1,8 +1,12 @@
 ## GoPack [![Code Climate](https://codeclimate.com/github/essentialkaos/gopack/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/gopack) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
 
-`gopack` is simple tool for packing Go package sources. This utility downloads package sources with all dependencies and pack into archive.
+`gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies and pack into archive.
+
+`gopack-build` is a simple tool for building binaries from sources archive.
 
 ### Usage demo
+
+#### `gopack`
 
 [![demo](https://gh.kaos.io/gopack-112.gif)](#usage-demo)
 
@@ -13,6 +17,7 @@
 ```
 [sudo] yum install -y https://yum.kaos.io/6/release/x86_64/kaos-repo-8.0-0.el6.noarch.rpm
 [sudo] yum install gopack
+[sudo] yum install gopack-build
 ```
 
 #### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
@@ -20,18 +25,20 @@
 ```
 [sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-8.0-0.el7.noarch.rpm
 [sudo] yum install gopack
+[sudo] yum install gopack-build
 ```
 
 #### From github repo
 
 ```bash
 wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack
-chmod +x gopack
-sudo mv gopack /usr/bin/gopack
+chmod +x gopack gopack-build
+[sudo] mv gopack gopack-build /usr/bin/
 ```
 
-
 ### Usage
+
+#### `gopack`
 
 ```
 Usage: gopack {options} package-path
@@ -60,6 +67,29 @@ Examples
   gopack -o ssllabs-client-1.0.1.tgz -t v1.0.1 github.com/essentialkaos/ssllabs_client
   Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result 
   as ssllabs-client-1.0.1.tgz
+
+```
+
+#### `gopack-build`
+```
+Usage: gopack-build {options} file
+
+Options
+
+  --output, -o directory     Output directory
+  --tmp, -T path             Path to temporary directory (/tmp by default)
+  --no-color, -nc            Disable colors in output
+  --about                    Show information about version
+  --help, -h                 Show this help message
+
+Examples
+
+  gopack yo-0.2.0.tar.bz2
+  Build binary from local archive with sources
+
+  gopack -o /home/user https://github.com/essentialkaos/yo/releases/download/v0.2.0/yo-0.2.0.tar.bz2
+  Build binary from remote archive with sources and save result
+  to directory /home/user
 
 ```
 
