@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.3.4
+Version:         1.4.0
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -13,7 +13,7 @@ Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
 BuildArch:       noarch
 BuildRoot:       %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:        golang git mercurial
+Requires:        golang git mercurial curl
 
 Provides:        %{name} = %{version}-%{release}
 
@@ -21,6 +21,18 @@ Provides:        %{name} = %{version}-%{release}
 
 %description
 Simple tool for packing golang packages sources with all dependencies.
+
+###############################################################################
+
+%package build
+
+Summary:         Tool for building binaries from sources archive
+Version:         1.0.0
+Release:         0%{?dist}
+Group:           Development/Tools
+
+%description build
+Tool for building binaries from sources archive.
 
 ###############################################################################
 
@@ -33,6 +45,7 @@ rm -rf %{buildroot}
 
 install -dm 755 %{buildroot}%{_bindir}
 install -pm 775 %{name} %{buildroot}%{_bindir}/%{name}
+install -pm 775 %{name} %{buildroot}%{_bindir}/%{name}-build
 
 %clean
 rm -rf %{buildroot}
@@ -42,9 +55,22 @@ rm -rf %{buildroot}
 %doc LICENSE.EN LICENSE.RU
 %{_bindir}/%{name}
 
+%files build
+%defattr(-,root,root,-)
+%doc LICENSE.EN LICENSE.RU
+%{_bindir}/%{name}-build
+
 ###############################################################################
 
 %changelog
+* Mon Apr 24 2017 Anton Novojilov <andy@essentialkaos.com> - 1.4.0-0
+- Added gopack-build utility (tool for building binaries from sources archive)
+- [gopack] Added handler for TERM/QUIT/INT signals
+- [gopack] Arguments parser updated to v3 with fixed stderr output redirection
+  for showArgWarn and showArgValWarn functions
+- [gopack] Added info about -nc/--no-colors argument
+- [gopack] Code refactoring
+
 * Wed Apr 05 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.4-0
 - Fixed output to stderr for a message about an unsupported argument
 
