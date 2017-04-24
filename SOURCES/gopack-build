@@ -68,13 +68,13 @@ main() {
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
   fi
 
-  if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
-    usage
+  if [[ -n "$version" ]] ; then
+    about
     exit $EC_OK
   fi
 
-  if [[ -n "$version" ]] ; then
-    about
+  if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
+    usage
     exit $EC_OK
   fi
 
@@ -499,13 +499,13 @@ usage() {
     show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}directory${CL_NORM} ${CL_DARK}..${CL_NORM} Output directory"
     show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}..........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
     show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}.........${CL_NORM} Disable colors in output"
-    show "  ${CL_GREEN}--about${CL_NORM} ${CL_DARK}.................${CL_NORM} Show information about version"
+    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}...........${CL_NORM} Show information about version"
     show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}..............${CL_NORM} Show this help message"
   else
     show "  --output, -o directory     Output directory"
     show "  --tmp, -T path             Path to temporary directory (/tmp by default)"
     show "  --no-color, -nc            Disable colors in output"
-    show "  --about                    Show information about version"
+    show "  --version, -v              Show information about version"
     show "  --help, -h                 Show this help message"
   fi
   show ""
