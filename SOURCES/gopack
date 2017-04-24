@@ -648,7 +648,7 @@ usage() {
     show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}...........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
     show "  ${CL_GREEN}--glide, -G${CL_NORM} ${CL_DARK}..............${CL_NORM} Use glide for downloading dependencies"
     show "  ${CL_GREEN}--verbose, -V${CL_NORM} ${CL_DARK}............${CL_NORM} Verbose output"
-    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}.........${CL_NORM} Disable colors in output"
+    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}..........${CL_NORM} Disable colors in output"
     show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}...............${CL_NORM} Show this help message"
   else
     show "  --output, -o filename      Output file name"
