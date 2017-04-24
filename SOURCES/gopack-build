@@ -200,6 +200,7 @@ buildBinaries() {
   binaries=$(findBinaries "$tmp_dir")
 
   if [[ -z "$binaries" ]] ; then
+    show ""
     error "Can't find any binaries for build" $YELLOW
     cleanAndExit $EC_ERROR
   fi
