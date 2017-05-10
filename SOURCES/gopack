@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.4.0"
+VER="1.5.0"
 
 ########################################################################################
 
@@ -46,9 +46,9 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !glide !no_colors 
+SUPPORTED_ARGS="tmp output version revision tag branch !glide !dep !no_colors 
  !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:glide
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:glide D:dep
  nc:!no_colors V:!verbose h:!help"
 
 EC_OK=0
@@ -115,13 +115,6 @@ prepare() {
     exit $EC_ERROR
   fi
 
-  if [[ -n "$glide" ]] ; then
-    if ! isAppInstalled "glide" ; then
-      error "This action require glide. Install it first." $RED
-      exit $EC_ERROR
-    fi
-  fi
-
   if [[ -n "$output" && -z $(getArchExt "$output") ]] ; then
     error "Unsupported output format" $RED
     exit $EC_ERROR
@@ -162,7 +155,11 @@ process() {
   fi
 
   if [[ -n "$glide" ]] ; then
-    if ! downloadGlideDeps "$package" "$tmp_dir" ; then
+    if ! getDepsByGlide "$package" "$tmp_dir" ; then
+      cleanAndExit $EC_ERROR
+    fi
+  elif [[ -n "$deps" ]] ; then
+    if ! getDepsByDep "$package" "$tmp_dir" ; then
       cleanAndExit $EC_ERROR
     fi
   else
@@ -214,6 +211,8 @@ setupGoEnv() {
   mkdir "$target_dir/bin"
 
   export GOPATH="$target_dir"
+  export GOBIN="$target_dir/bin"
+  export PATH="$target_dir/bin:$PATH"
 }
 
 # Checkout source code
@@ -310,6 +309,25 @@ downloadDeps() {
   return 0
 }
 
+# Install latest version of glide
+#
+# Code: Yes
+# Echo: No
+installGlide() {
+  if isAppInstalled "glide" ; then
+    return 0
+  fi
+
+  showm "Installing glide... " $BOLD
+
+  if ! execCmd "go" "get" "github.com/Masterminds/glide" ; then
+    error "Can't install glide" $RED
+    return 1
+  fi
+
+  return 0
+}
+
 # Download dependencies for given package using glide
 #
 # 1: Package name (String)
@@ -317,7 +335,7 @@ downloadDeps() {
 #
 # Code: Yes
 # Echo: No
-downloadGlideDeps() {
+getDepsByGlide() {
   local package tmp_dir
 
   package="$1"
@@ -328,6 +346,55 @@ downloadGlideDeps() {
   pushd "$tmp_dir/src/$package" &> /dev/null
 
     if ! execCmd "glide" "install" ; then
+      error "Can't download package dependencies" $RED
+      return 1
+    fi
+
+  popd &> /dev/null
+
+  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
+  cleanPackDir "${tmp_dir}/src"
+
+  return 0
+}
+
+# Install latest version of dep
+#
+# Code: Yes
+# Echo: No
+installDep() {
+  if isAppInstalled "dep" ; then
+    return 0
+  fi
+
+  showm "Installing dep... " $BOLD
+
+  if ! execCmd "go" "get" "github.com/golang/dep/..." ; then
+    error "Can't install dep" $RED
+    return 1
+  fi
+
+  return 0
+}
+
+# Download dependencies for given package using glide
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: Yes
+# Echo: No
+getDepsByDep() {
+  local package tmp_dir
+
+  package="$1"
+  tmp_dir="$2"
+
+  showm "Downloading dependencies with dep... " $BOLD
+
+  pushd "$tmp_dir/src/$package" &> /dev/null
+
+    if ! execCmd "dep" "ensure" "-update" ; then
       error "Can't download package dependencies" $RED
       return 1
     fi
@@ -616,6 +683,38 @@ showm() {
   fi
 }
 
+# Show formated message with option info
+#
+# 1: Option (String)
+# 2: Description (String)
+# 3: Arguments (String) [Optional]
+#
+# Code: No
+# Echo: No
+showo() {
+  local optn optd optp optt optf breadcrumbs
+
+  optn="$1"
+  optd="$2"
+  optp="$3"
+
+  if [[ -n "$DARK" ]] ; then
+    breadcrumbs="............................"
+  else
+    breadcrumbs="                            "
+  fi
+
+  if [[ -z "$optp" ]] ; then
+    optt="$optn"
+    optf=$(( 26 - ${#optt} ))
+    echo -e "  ${CL_GREEN}${optn}${CL_NORM} ${CL_DARK}${breadcrumbs:0:$optf}${CL_NORM} $optd"
+  else
+    optt="$optn $optp"
+    optf=$(( 26 - ${#optt} ))
+    echo -e "  ${CL_GREEN}${optn}${CL_NORM} ${CL_GREY}${optp}${CL_NORM} ${CL_DARK}${breadcrumbs:0:$optf}${CL_NORM} $optd"
+  fi
+}
+
 # Print error message
 #
 # 1: Message (String)
@@ -639,29 +738,17 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  if [[ -n "$DARK" ]] ; then
-    show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}filename${CL_NORM} ${CL_DARK}....${CL_NORM} Output file name"
-    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_GREY}version${CL_NORM} ${CL_DARK}....${CL_NORM} Package version"
-    show "  ${CL_GREEN}--revision, -r${CL_NORM} ${CL_GREY}revision${CL_NORM} ${CL_DARK}..${CL_NORM} Target revision ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
-    show "  ${CL_GREEN}--branch, -b${CL_NORM} ${CL_GREY}branch${CL_NORM} ${CL_DARK}......${CL_NORM} Target branch ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
-    show "  ${CL_GREEN}--tag, -t${CL_NORM} ${CL_GREY}tag${CL_NORM} ${CL_DARK}............${CL_NORM} Target tag ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
-    show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}...........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
-    show "  ${CL_GREEN}--glide, -G${CL_NORM} ${CL_DARK}..............${CL_NORM} Use glide for downloading dependencies"
-    show "  ${CL_GREEN}--verbose, -V${CL_NORM} ${CL_DARK}............${CL_NORM} Verbose output"
-    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}..........${CL_NORM} Disable colors in output"
-    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}...............${CL_NORM} Show this help message"
-  else
-    show "  --output, -o filename      Output file name"
-    show "  --version, -v version      Package version"
-    show "  --revision, -r revision    Target revision (will be set after sources fetching)"
-    show "  --branch, -b branch        Target branch (will be set after sources fetching)"
-    show "  --tag, -t tag              Target tag (will be set after sources fetching)"
-    show "  --tmp, -T path             Path to temporary directory (/tmp by default)"
-    show "  --glide, -G                Use glide for downloading dependencies"
-    show "  --verbose, -V              Verbose output"
-    show "  --no-color, -nc            Disable colors in output"
-    show "  --help, -h                 Show this help message"
-  fi
+  showo "--output, -o"    "Output file name" "filename"
+  showo "--version, -v"   "Package version" "version"
+  showo "--revision, -r"  "Target revision" "revision"
+  showo "--branch, -b"    "Target branch" "branch"
+  showo "--tag, -t"       "Target tag" "tag"
+  showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "path"
+  showo "--glide, -G"     "Use glide for downloading dependencies" ""
+  showo "--dep, -D"       "Use dep for downloading dependencies" ""
+  showo "--verbose, -V"   "Verbose output" ""
+  showo "--no-color, -nc" "Disable colors in output" ""
+  showo "--help, -h"      "Show this help message" ""
   show ""
   show "Examples" $BOLD
   show ""
