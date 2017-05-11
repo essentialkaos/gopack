@@ -431,7 +431,7 @@ getDepsByDep() {
 
   pushd "$tmp_dir/src/$package" &> /dev/null
 
-    if ! execCmd "dep" "ensure" "-update" ; then
+    if ! execCmd "dep" "ensure" "-update" "-v" ; then
       error "Can't download package dependencies" $RED
       return 1
     fi

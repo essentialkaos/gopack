@@ -65,8 +65,7 @@ rm -rf %{buildroot}
 %changelog
 * Thu May 11 2017 Anton Novojilov <andy@essentialkaos.com> - 1.5.0-0
 - [gopack] Improved usage info output
-- [gopack] Improved glide support
-- [gopack] Added dep support
+- [gopack] Different dependency management tools support
 
 * Mon Apr 24 2017 Anton Novojilov <andy@essentialkaos.com> - 1.4.0-0
 - Added gopack-build utility (tool for building binaries from sources archive)
