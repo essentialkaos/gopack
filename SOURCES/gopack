@@ -51,17 +51,22 @@ SUPPORTED_ARGS="tmp output version revision tag branch !manager !no_colors
 SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch M:manager
  nc:!no_colors V:!verbose h:!help"
 
-EC_OK=0
-EC_ERROR=1
-
 # Path to temporary dir (String)
 tmp="/tmp"
+
+EC_OK=0
+EC_ERROR=1
 
 # -
 # Temporary directory for sources
 tmp_dir=""
 
+# -
+# Glide usage flag
 useGlide=""
+
+# -
+# Dep usage flag
 useDep=""
 
 ########################################################################################
