@@ -158,7 +158,7 @@ process() {
     if ! getDepsByGlide "$package" "$tmp_dir" ; then
       cleanAndExit $EC_ERROR
     fi
-  elif [[ -n "$deps" ]] ; then
+  elif [[ -n "$dep" ]] ; then
     if ! getDepsByDep "$package" "$tmp_dir" ; then
       cleanAndExit $EC_ERROR
     fi
