@@ -155,7 +155,7 @@ process() {
   fi
 
   if [[ -n "$auto" ]] ; then
-    findUsedDepsManager
+    findUsedDepsManager "$package" "$tmp_dir"
   fi
 
   if [[ -n "$glide" ]] ; then
@@ -322,6 +322,9 @@ downloadDeps() {
 }
 
 # Try to find used dependency management tool
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
 #
 # Code: No
 # Echo: No
