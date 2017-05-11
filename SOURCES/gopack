@@ -46,9 +46,9 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !glide !dep !no_colors 
+SUPPORTED_ARGS="tmp output version revision tag branch !glide !dep !auto !no_colors 
  !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:!glide D:!dep
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:!glide D:!dep A:!auto
  nc:!no_colors V:!verbose h:!help"
 
 EC_OK=0
@@ -152,6 +152,10 @@ process() {
 
   if ! checkoutCode "$package" "$tmp_dir" ; then
     cleanAndExit $EC_ERROR
+  fi
+
+  if [[ -n "$auto" ]] ; then
+    findUsedDepsManager
   fi
 
   if [[ -n "$glide" ]] ; then
@@ -315,6 +319,25 @@ downloadDeps() {
   cleanPackDir "${tmp_dir}/src"
 
   return 0
+}
+
+# Try to find used dependency management tool
+#
+# Code: No
+# Echo: No
+findUsedDepsManager() {
+  local package tmp_dir
+
+  package="$1"
+  tmp_dir="$2"
+
+  if [[ $(find "$tmp_dir/src/$package" -name "Gopkg.toml" | wc -l) != "0" ]] ; then
+    dep=true
+  fi
+
+  if [[ $(find "$tmp_dir/src/$package" -name "glide.yaml" | wc -l) != "0" ]] ; then
+    glide=true
+  fi
 }
 
 # Install latest version of glide
@@ -752,11 +775,12 @@ usage() {
   showo "--branch, -b"    "Target branch" "branch"
   showo "--tag, -t"       "Target tag" "tag"
   showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "path"
-  showo "--glide, -G"     "Use glide for downloading dependencies" ""
-  showo "--dep, -D"       "Use dep for downloading dependencies" ""
-  showo "--verbose, -V"   "Verbose output" ""
-  showo "--no-color, -nc" "Disable colors in output" ""
-  showo "--help, -h"      "Show this help message" ""
+  showo "--glide, -G"     "Use glide for downloading dependencies"
+  showo "--dep, -D"       "Use dep for downloading dependencies"
+  showo "--auto, -A"      "Automatically find used dependency management tool"
+  showo "--verbose, -V"   "Verbose output"
+  showo "--no-color, -nc" "Disable colors in output"
+  showo "--help, -h"      "Show this help message"
   show ""
   show "Examples" $BOLD
   show ""
