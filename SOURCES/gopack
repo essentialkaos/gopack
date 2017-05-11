@@ -46,9 +46,9 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !glide !dep !auto !no_colors 
+SUPPORTED_ARGS="tmp output version revision tag branch !manager !no_colors 
  !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:!glide D:!dep A:!auto
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch M:manager
  nc:!no_colors V:!verbose h:!help"
 
 EC_OK=0
@@ -60,6 +60,9 @@ tmp="/tmp"
 # -
 # Temporary directory for sources
 tmp_dir=""
+
+useGlide=""
+useDep=""
 
 ########################################################################################
 
@@ -154,11 +157,11 @@ process() {
     cleanAndExit $EC_ERROR
   fi
 
-  if [[ -n "$auto" ]] ; then
+  if [[ -n "$manager" ]] ; then
     findUsedDepsManager "$package" "$tmp_dir"
   fi
 
-  if [[ -n "$glide" ]] ; then
+  if [[ -n "$useGlide" ]] ; then
     if ! installGlide ; then
       cleanAndExit $EC_ERROR
     fi
@@ -166,7 +169,7 @@ process() {
     if ! getDepsByGlide "$package" "$tmp_dir" ; then
       cleanAndExit $EC_ERROR
     fi
-  elif [[ -n "$dep" ]] ; then
+  elif [[ -n "$useDep" ]] ; then
     if ! installDep ; then
       cleanAndExit $EC_ERROR
     fi
@@ -335,11 +338,11 @@ findUsedDepsManager() {
   tmp_dir="$2"
 
   if [[ $(find "$tmp_dir/src/$package" -name "Gopkg.toml" | wc -l) != "0" ]] ; then
-    dep=true
+    useDep=true
   fi
 
   if [[ $(find "$tmp_dir/src/$package" -name "glide.yaml" | wc -l) != "0" ]] ; then
-    glide=true
+    useGlide=true
   fi
 }
 
@@ -778,9 +781,7 @@ usage() {
   showo "--branch, -b"    "Target branch" "branch"
   showo "--tag, -t"       "Target tag" "tag"
   showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "path"
-  showo "--glide, -G"     "Use glide for downloading dependencies"
-  showo "--dep, -D"       "Use dep for downloading dependencies"
-  showo "--auto, -A"      "Automatically find used dependency management tool"
+  showo "--manager, -M"   "Use package manager (dep/glide) for downloading dependencies"
   showo "--verbose, -V"   "Verbose output"
   showo "--no-color, -nc" "Disable colors in output"
   showo "--help, -h"      "Show this help message"
