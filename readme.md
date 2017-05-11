@@ -49,16 +49,16 @@ Usage: gopack {options} package-path
 
 Options
 
-  --output, -o filename      Output file name
-  --version, -v version      Package version
-  --revision, -r revision    Target revision (will be set after sources fetching)
-  --branch, -b branch        Target branch (will be set after sources fetching)
-  --tag, -t tag              Target tag (will be set after sources fetching)
-  --tmp, -T path             Path to temporary directory (/tmp by default)
-  --glide, -G                Use glide for downloading dependencies
-  --verbose, -V              Verbose output
-  --about                    Show information about version
-  --help, -h                 Show this help message
+  --output, -o filename       Output file name
+  --version, -v version       Package version
+  --revision, -r revision     Target revision
+  --branch, -b branch         Target branch
+  --tag, -t tag               Target tag
+  --tmp, -T path              Path to temporary directory (/tmp by default)
+  --manager, -M               Use package manager (dep/glide) for downloading dependencies
+  --verbose, -V               Verbose output
+  --no-color, -nc             Disable colors in output
+  --help, -h                  Show this help message
 
 Examples
 

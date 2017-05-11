@@ -153,12 +153,12 @@ process() {
 
   show "DONE" $GREEN
 
-  if ! checkoutCode "$package" "$tmp_dir" ; then
+  if ! checkoutCode "$package" ; then
     cleanAndExit $EC_ERROR
   fi
 
   if [[ -n "$manager" ]] ; then
-    findUsedDepsManager "$package" "$tmp_dir"
+    findUsedDepsManager "$package"
   fi
 
   if [[ -n "$useGlide" ]] ; then
@@ -166,7 +166,7 @@ process() {
       cleanAndExit $EC_ERROR
     fi
 
-    if ! getDepsByGlide "$package" "$tmp_dir" ; then
+    if ! getDepsByGlide "$package" ; then
       cleanAndExit $EC_ERROR
     fi
   elif [[ -n "$useDep" ]] ; then
@@ -174,25 +174,25 @@ process() {
       cleanAndExit $EC_ERROR
     fi
 
-    if ! getDepsByDep "$package" "$tmp_dir" ; then
+    if ! getDepsByDep "$package" ; then
       cleanAndExit $EC_ERROR
     fi
   else
-    if ! downloadDeps "$package" "$tmp_dir" ; then
+    if ! downloadDeps "$package" ; then
       cleanAndExit $EC_ERROR
     fi
   fi
 
   arch_name=$(getArchName "$output")
 
-  mv "${tmp_dir}/src" "${tmp_dir}/${arch_name}"
-  mv "${tmp_dir}/REVISIONS" "${tmp_dir}/${arch_name}/"
+  mv "$GOPATH/src" "$GOPATH/$arch_name"
+  mv "$GOPATH/REVISIONS" "$GOPATH/$arch_name/"
 
-  if ! packSources "$output" "$tmp_dir" ; then
+  if ! packSources "$output" ; then
     cleanAndExit $EC_ERROR
   fi
 
-  cp "${tmp_dir}/${output}" .
+  cp "$GOPATH/$output" .
 
   [[ -z "$verbose" ]] && show ""
 
@@ -238,10 +238,9 @@ setupGoEnv() {
 # Code: No
 # Echo: No
 checkoutCode() {
-  local package tmp_dir git_path package_name
+  local package git_path package_name
 
   package="$1"
-  tmp_dir="$2"
   git_path="https://$package.git"
   package_name=$(basename "$package")
 
@@ -253,14 +252,14 @@ checkoutCode() {
     return 1
   fi
 
-  mkdir -p "$tmp_dir/src/$package"
+  mkdir -p "$GOPATH/src/$package"
 
-  if ! execCmd "git" "clone" "$git_path" "$tmp_dir/src/$package/" ; then
+  if ! execCmd "git" "clone" "$git_path" "$GOPATH/src/$package/" ; then
     error "Error while cloning repository ${CL_BL_RED}${git_path}" $RED
     return 1
   fi
 
-  pushd "$tmp_dir/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null
 
     if [[ -n "$revision" ]] ; then
       showm "Switching HEAD to revision $revision... " $BOLD
@@ -302,14 +301,13 @@ checkoutCode() {
 # Code: Yes
 # Echo: No
 downloadDeps() {
-  local package tmp_dir
+  local package
 
   package="$1"
-  tmp_dir="$2"
 
   showm "Downloading dependencies... " $BOLD
 
-  pushd "$tmp_dir/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null
 
     if ! execCmd "go" "get" "-d" "-v" "./..." ; then
       error "Can't download package dependencies" $RED
@@ -318,8 +316,8 @@ downloadDeps() {
 
   popd &> /dev/null
 
-  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
-  cleanPackDir "${tmp_dir}/src"
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+  cleanPackDir "$GOPATH/src"
 
   return 0
 }
@@ -332,16 +330,15 @@ downloadDeps() {
 # Code: No
 # Echo: No
 findUsedDepsManager() {
-  local package tmp_dir
+  local package
 
   package="$1"
-  tmp_dir="$2"
 
-  if [[ $(find "$tmp_dir/src/$package" -name "Gopkg.toml" | wc -l) != "0" ]] ; then
+  if [[ $(find "$GOPATH/src/$package" -name "Gopkg.toml" | wc -l) != "0" ]] ; then
     useDep=true
   fi
 
-  if [[ $(find "$tmp_dir/src/$package" -name "glide.yaml" | wc -l) != "0" ]] ; then
+  if [[ $(find "$GOPATH/src/$package" -name "glide.yaml" | wc -l) != "0" ]] ; then
     useGlide=true
   fi
 }
@@ -362,6 +359,8 @@ installGlide() {
     return 1
   fi
 
+  rm -rf "$GOPATH/src/github.com/Masterminds/glide/" &>/dev/null
+
   return 0
 }
 
@@ -373,14 +372,13 @@ installGlide() {
 # Code: Yes
 # Echo: No
 getDepsByGlide() {
-  local package tmp_dir
+  local package
 
   package="$1"
-  tmp_dir="$2"
 
   showm "Downloading dependencies with glide... " $BOLD
 
-  pushd "$tmp_dir/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null
 
     if ! execCmd "glide" "install" ; then
       error "Can't download package dependencies" $RED
@@ -389,8 +387,8 @@ getDepsByGlide() {
 
   popd &> /dev/null
 
-  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
-  cleanPackDir "${tmp_dir}/src"
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+  cleanPackDir "$GOPATH/src"
 
   return 0
 }
@@ -411,6 +409,8 @@ installDep() {
     return 1
   fi
 
+  rm -rf "$GOPATH/src/github.com/golang/dep/" &>/dev/null
+
   return 0
 }
 
@@ -422,14 +422,13 @@ installDep() {
 # Code: Yes
 # Echo: No
 getDepsByDep() {
-  local package tmp_dir
+  local package
 
   package="$1"
-  tmp_dir="$2"
 
   showm "Downloading dependencies with dep... " $BOLD
 
-  pushd "$tmp_dir/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null
 
     if ! execCmd "dep" "ensure" "-update" "-v" ; then
       error "Can't download package dependencies" $RED
@@ -438,8 +437,8 @@ getDepsByDep() {
 
   popd &> /dev/null
 
-  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
-  cleanPackDir "${tmp_dir}/src"
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+  cleanPackDir "$GOPATH/src"
 
   return 0
 }
@@ -508,17 +507,16 @@ cleanPackDir() {
 # Code: Yes
 # Echo: No
 packSources() {
-  local output tmp_dir arch_name arch_ext
+  local output arch_name arch_ext
 
   output="$1"
-  tmp_dir="$2"
 
   arch_name=$(getArchName "$output")
   arch_ext=$(getArchExt "$output")
 
   showm "Packing sources... " $BOLD
 
-  pushd "${tmp_dir}" &> /dev/null
+  pushd "$GOPATH" &> /dev/null
 
     if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
