@@ -328,7 +328,7 @@ installGlide() {
 
   showm "Installing glide... " $BOLD
 
-  if ! execCmd "go" "get" "github.com/Masterminds/glide" ; then
+  if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
     error "Can't install glide" $RED
     return 1
   fi
@@ -377,7 +377,7 @@ installDep() {
 
   showm "Installing dep... " $BOLD
 
-  if ! execCmd "go" "get" "github.com/golang/dep/..." ; then
+  if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
     error "Can't install dep" $RED
     return 1
   fi
