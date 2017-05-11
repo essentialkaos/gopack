@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.4.0
+Version:         1.5.0
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -63,6 +63,13 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Thu May 11 2017 Anton Novojilov <andy@essentialkaos.com> - 1.5.0-0
+- [gopack-build] Improved usage info output
+- [gopack] Different dependency management tools support
+- [gopack] Improved usage info output
+- [gopack] Code refactoring
+- [gopack] Empty directories removal
+
 * Mon Apr 24 2017 Anton Novojilov <andy@essentialkaos.com> - 1.4.0-0
 - Added gopack-build utility (tool for building binaries from sources archive)
 - [gopack] Added handler for TERM/QUIT/INT signals

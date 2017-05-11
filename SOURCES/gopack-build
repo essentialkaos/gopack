@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="GoPack Build"
-VER="1.0.0"
+VER="1.1.0"
 
 ########################################################################################
 
@@ -474,6 +474,38 @@ showm() {
   fi
 }
 
+# Show formated message with option info
+#
+# 1: Option (String)
+# 2: Description (String)
+# 3: Arguments (String) [Optional]
+#
+# Code: No
+# Echo: No
+showo() {
+  local optn optd optp optt optf breadcrumbs
+
+  optn="$1"
+  optd="$2"
+  optp="$3"
+
+  if [[ -n "$DARK" ]] ; then
+    breadcrumbs="............................"
+  else
+    breadcrumbs="                            "
+  fi
+
+  if [[ -z "$optp" ]] ; then
+    optt="$optn"
+    optf=$(( 20 - ${#optt} ))
+    echo -e "  ${CL_GREEN}${optn}${CL_NORM} ${CL_DARK}${breadcrumbs:0:$optf}${CL_NORM} $optd"
+  else
+    optt="$optn $optp"
+    optf=$(( 20 - ${#optt} ))
+    echo -e "  ${CL_GREEN}${optn}${CL_NORM} ${CL_GREY}${optp}${CL_NORM} ${CL_DARK}${breadcrumbs:0:$optf}${CL_NORM} $optd"
+  fi
+}
+
 # Print error message
 #
 # 1: Message (String)
@@ -485,7 +517,6 @@ error() {
   show "$@" 1>&2
 }
 
-
 # Show usage info
 #
 # Code: No
@@ -496,19 +527,11 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  if [[ -n "$DARK" ]] ; then
-    show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}directory${CL_NORM} ${CL_DARK}..${CL_NORM} Output directory"
-    show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}..........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
-    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}.........${CL_NORM} Disable colors in output"
-    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}...........${CL_NORM} Show information about version"
-    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}..............${CL_NORM} Show this help message"
-  else
-    show "  --output, -o directory     Output directory"
-    show "  --tmp, -T path             Path to temporary directory (/tmp by default)"
-    show "  --no-color, -nc            Disable colors in output"
-    show "  --version, -v              Show information about version"
-    show "  --help, -h                 Show this help message"
-  fi
+  showo "--output, -o"    "Output directory" "dir"
+  showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "dir"
+  showo "--no-color, -nc" "Disable colors in output" ""
+  showo "--version, -v"   "Show information about version" ""
+  showo "--help, -h"      "Show this help message" ""
   show ""
   show "Examples" $BOLD
   show ""

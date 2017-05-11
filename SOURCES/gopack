@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.4.0"
+VER="1.5.0"
 
 ########################################################################################
 
@@ -46,20 +46,28 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !glide !no_colors 
+SUPPORTED_ARGS="tmp output version revision tag branch !manager !no_colors 
  !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:glide
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch M:manager
  nc:!no_colors V:!verbose h:!help"
-
-EC_OK=0
-EC_ERROR=1
 
 # Path to temporary dir (String)
 tmp="/tmp"
 
+EC_OK=0
+EC_ERROR=1
+
 # -
 # Temporary directory for sources
 tmp_dir=""
+
+# -
+# Glide usage flag
+useGlide=""
+
+# -
+# Dep usage flag
+useDep=""
 
 ########################################################################################
 
@@ -115,13 +123,6 @@ prepare() {
     exit $EC_ERROR
   fi
 
-  if [[ -n "$glide" ]] ; then
-    if ! isAppInstalled "glide" ; then
-      error "This action require glide. Install it first." $RED
-      exit $EC_ERROR
-    fi
-  fi
-
   if [[ -n "$output" && -z $(getArchExt "$output") ]] ; then
     error "Unsupported output format" $RED
     exit $EC_ERROR
@@ -157,30 +158,46 @@ process() {
 
   show "DONE" $GREEN
 
-  if ! checkoutCode "$package" "$tmp_dir" ; then
+  if ! checkoutCode "$package" ; then
     cleanAndExit $EC_ERROR
   fi
 
-  if [[ -n "$glide" ]] ; then
-    if ! downloadGlideDeps "$package" "$tmp_dir" ; then
+  if [[ -n "$manager" ]] ; then
+    findUsedDepsManager "$package"
+  fi
+
+  if [[ -n "$useGlide" ]] ; then
+    if ! installGlide ; then
+      cleanAndExit $EC_ERROR
+    fi
+
+    if ! getDepsByGlide "$package" ; then
+      cleanAndExit $EC_ERROR
+    fi
+  elif [[ -n "$useDep" ]] ; then
+    if ! installDep ; then
+      cleanAndExit $EC_ERROR
+    fi
+
+    if ! getDepsByDep "$package" ; then
       cleanAndExit $EC_ERROR
     fi
   else
-    if ! downloadDeps "$package" "$tmp_dir" ; then
+    if ! downloadDeps "$package" ; then
       cleanAndExit $EC_ERROR
     fi
   fi
 
   arch_name=$(getArchName "$output")
 
-  mv "${tmp_dir}/src" "${tmp_dir}/${arch_name}"
-  mv "${tmp_dir}/REVISIONS" "${tmp_dir}/${arch_name}/"
+  mv "$GOPATH/src" "$GOPATH/$arch_name"
+  mv "$GOPATH/REVISIONS" "$GOPATH/$arch_name/"
 
-  if ! packSources "$output" "$tmp_dir" ; then
+  if ! packSources "$output" ; then
     cleanAndExit $EC_ERROR
   fi
 
-  cp "${tmp_dir}/${output}" .
+  cp "$GOPATH/$output" .
 
   [[ -z "$verbose" ]] && show ""
 
@@ -214,6 +231,8 @@ setupGoEnv() {
   mkdir "$target_dir/bin"
 
   export GOPATH="$target_dir"
+  export GOBIN="$target_dir/bin"
+  export PATH="$target_dir/bin:$PATH"
 }
 
 # Checkout source code
@@ -224,10 +243,9 @@ setupGoEnv() {
 # Code: No
 # Echo: No
 checkoutCode() {
-  local package tmp_dir git_path package_name
+  local package git_path package_name
 
   package="$1"
-  tmp_dir="$2"
   git_path="https://$package.git"
   package_name=$(basename "$package")
 
@@ -239,14 +257,14 @@ checkoutCode() {
     return 1
   fi
 
-  mkdir -p "$tmp_dir/src/$package"
+  mkdir -p "$GOPATH/src/$package"
 
-  if ! execCmd "git" "clone" "$git_path" "$tmp_dir/src/$package/" ; then
+  if ! execCmd "git" "clone" "$git_path" "$GOPATH/src/$package/" ; then
     error "Error while cloning repository ${CL_BL_RED}${git_path}" $RED
     return 1
   fi
 
-  pushd "$tmp_dir/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null
 
     if [[ -n "$revision" ]] ; then
       showm "Switching HEAD to revision $revision... " $BOLD
@@ -288,14 +306,13 @@ checkoutCode() {
 # Code: Yes
 # Echo: No
 downloadDeps() {
-  local package tmp_dir
+  local package
 
   package="$1"
-  tmp_dir="$2"
 
   showm "Downloading dependencies... " $BOLD
 
-  pushd "$tmp_dir/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null
 
     if ! execCmd "go" "get" "-d" "-v" "./..." ; then
       error "Can't download package dependencies" $RED
@@ -304,8 +321,50 @@ downloadDeps() {
 
   popd &> /dev/null
 
-  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
-  cleanPackDir "${tmp_dir}/src"
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+  cleanPackDir "$GOPATH/src"
+
+  return 0
+}
+
+# Try to find used dependency management tool
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: No
+# Echo: No
+findUsedDepsManager() {
+  local package
+
+  package="$1"
+
+  if [[ $(find "$GOPATH/src/$package" -name "Gopkg.toml" | wc -l) != "0" ]] ; then
+    useDep=true
+  fi
+
+  if [[ $(find "$GOPATH/src/$package" -name "glide.yaml" | wc -l) != "0" ]] ; then
+    useGlide=true
+  fi
+}
+
+# Install latest version of glide
+#
+# Code: Yes
+# Echo: No
+installGlide() {
+  if isAppInstalled "glide" ; then
+    return 0
+  fi
+
+  showm "Installing glide... " $BOLD
+
+  if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
+    error "Can't install glide" $RED
+    return 1
+  fi
+
+  rm -rf "$GOPATH/src/github.com/Masterminds/glide/" &>/dev/null
 
   return 0
 }
@@ -317,15 +376,14 @@ downloadDeps() {
 #
 # Code: Yes
 # Echo: No
-downloadGlideDeps() {
-  local package tmp_dir
+getDepsByGlide() {
+  local package
 
   package="$1"
-  tmp_dir="$2"
 
   showm "Downloading dependencies with glide... " $BOLD
 
-  pushd "$tmp_dir/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null
 
     if ! execCmd "glide" "install" ; then
       error "Can't download package dependencies" $RED
@@ -334,8 +392,58 @@ downloadGlideDeps() {
 
   popd &> /dev/null
 
-  saveLatestCommitsHash "${tmp_dir}/src" "${tmp_dir}/REVISIONS"
-  cleanPackDir "${tmp_dir}/src"
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+  cleanPackDir "$GOPATH/src"
+
+  return 0
+}
+
+# Install latest version of dep
+#
+# Code: Yes
+# Echo: No
+installDep() {
+  if isAppInstalled "dep" ; then
+    return 0
+  fi
+
+  showm "Installing dep... " $BOLD
+
+  if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
+    error "Can't install dep" $RED
+    return 1
+  fi
+
+  rm -rf "$GOPATH/src/github.com/golang/dep/" &>/dev/null
+
+  return 0
+}
+
+# Download dependencies for given package using glide
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: Yes
+# Echo: No
+getDepsByDep() {
+  local package
+
+  package="$1"
+
+  showm "Downloading dependencies with dep... " $BOLD
+
+  pushd "$GOPATH/src/$package" &> /dev/null
+
+    if ! execCmd "dep" "ensure" "-update" "-v" ; then
+      error "Can't download package dependencies" $RED
+      return 1
+    fi
+
+  popd &> /dev/null
+
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+  cleanPackDir "$GOPATH/src"
 
   return 0
 }
@@ -384,16 +492,18 @@ saveLatestCommitsHash() {
 cleanPackDir() {
   local dir="$1"
 
-  find "$dir" -type d -name ".git" -exec rm -rf {} \; 2> /dev/null
-  find "$dir" -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".gitattributes" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".gitmodules" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".travis.yml" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".drone.sec" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".drone.yml" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".hound.yml" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".vexor.yml" -exec rm -f {} \; 2> /dev/null
-  find "$dir" -type f -name ".codebeatsettings" -exec rm -f {} \; 2> /dev/null
+  find "$dir" -type d -name ".git" -exec rm -rf {} \; &>/dev/null
+  find "$dir" -type f -name ".gitignore" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".gitattributes" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".gitmodules" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".travis.yml" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".drone.sec" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".drone.yml" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".hound.yml" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".vexor.yml" -exec rm -f {} \; &>/dev/null
+  find "$dir" -type f -name ".codebeatsettings" -exec rm -f {} \; &>/dev/null
+
+  find "$dir" -type d -empty -delete &>/dev/null
 }
 
 # Pack source into archive
@@ -404,17 +514,16 @@ cleanPackDir() {
 # Code: Yes
 # Echo: No
 packSources() {
-  local output tmp_dir arch_name arch_ext
+  local output arch_name arch_ext
 
   output="$1"
-  tmp_dir="$2"
 
   arch_name=$(getArchName "$output")
   arch_ext=$(getArchExt "$output")
 
   showm "Packing sources... " $BOLD
 
-  pushd "${tmp_dir}" &> /dev/null
+  pushd "$GOPATH" &> /dev/null
 
     if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
@@ -616,6 +725,38 @@ showm() {
   fi
 }
 
+# Show formated message with option info
+#
+# 1: Option (String)
+# 2: Description (String)
+# 3: Arguments (String) [Optional]
+#
+# Code: No
+# Echo: No
+showo() {
+  local optn optd optp optt optf breadcrumbs
+
+  optn="$1"
+  optd="$2"
+  optp="$3"
+
+  if [[ -n "$DARK" ]] ; then
+    breadcrumbs="............................"
+  else
+    breadcrumbs="                            "
+  fi
+
+  if [[ -z "$optp" ]] ; then
+    optt="$optn"
+    optf=$(( 26 - ${#optt} ))
+    echo -e "  ${CL_GREEN}${optn}${CL_NORM} ${CL_DARK}${breadcrumbs:0:$optf}${CL_NORM} $optd"
+  else
+    optt="$optn $optp"
+    optf=$(( 26 - ${#optt} ))
+    echo -e "  ${CL_GREEN}${optn}${CL_NORM} ${CL_GREY}${optp}${CL_NORM} ${CL_DARK}${breadcrumbs:0:$optf}${CL_NORM} $optd"
+  fi
+}
+
 # Print error message
 #
 # 1: Message (String)
@@ -639,29 +780,16 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  if [[ -n "$DARK" ]] ; then
-    show "  ${CL_GREEN}--output, -o${CL_NORM} ${CL_GREY}filename${CL_NORM} ${CL_DARK}....${CL_NORM} Output file name"
-    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_GREY}version${CL_NORM} ${CL_DARK}....${CL_NORM} Package version"
-    show "  ${CL_GREEN}--revision, -r${CL_NORM} ${CL_GREY}revision${CL_NORM} ${CL_DARK}..${CL_NORM} Target revision ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
-    show "  ${CL_GREEN}--branch, -b${CL_NORM} ${CL_GREY}branch${CL_NORM} ${CL_DARK}......${CL_NORM} Target branch ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
-    show "  ${CL_GREEN}--tag, -t${CL_NORM} ${CL_GREY}tag${CL_NORM} ${CL_DARK}............${CL_NORM} Target tag ${CL_DARK}(will be set after sources fetching)${CL_NORM}"
-    show "  ${CL_GREEN}--tmp, -T${CL_NORM} ${CL_GREY}path${CL_NORM} ${CL_DARK}...........${CL_NORM} Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}"
-    show "  ${CL_GREEN}--glide, -G${CL_NORM} ${CL_DARK}..............${CL_NORM} Use glide for downloading dependencies"
-    show "  ${CL_GREEN}--verbose, -V${CL_NORM} ${CL_DARK}............${CL_NORM} Verbose output"
-    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}..........${CL_NORM} Disable colors in output"
-    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}...............${CL_NORM} Show this help message"
-  else
-    show "  --output, -o filename      Output file name"
-    show "  --version, -v version      Package version"
-    show "  --revision, -r revision    Target revision (will be set after sources fetching)"
-    show "  --branch, -b branch        Target branch (will be set after sources fetching)"
-    show "  --tag, -t tag              Target tag (will be set after sources fetching)"
-    show "  --tmp, -T path             Path to temporary directory (/tmp by default)"
-    show "  --glide, -G                Use glide for downloading dependencies"
-    show "  --verbose, -V              Verbose output"
-    show "  --no-color, -nc            Disable colors in output"
-    show "  --help, -h                 Show this help message"
-  fi
+  showo "--output, -o"    "Output file name" "filename"
+  showo "--version, -v"   "Package version" "version"
+  showo "--revision, -r"  "Target revision" "revision"
+  showo "--branch, -b"    "Target branch" "branch"
+  showo "--tag, -t"       "Target tag" "tag"
+  showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "path"
+  showo "--manager, -M"   "Use package manager (dep/glide) for downloading dependencies"
+  showo "--verbose, -V"   "Verbose output"
+  showo "--no-color, -nc" "Disable colors in output"
+  showo "--help, -h"      "Show this help message"
   show ""
   show "Examples" $BOLD
   show ""
