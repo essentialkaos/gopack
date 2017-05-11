@@ -48,7 +48,7 @@ SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
 SUPPORTED_ARGS="tmp output version revision tag branch !glide !dep !no_colors 
  !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:glide D:dep
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch G:!glide D:!dep
  nc:!no_colors V:!verbose h:!help"
 
 EC_OK=0
@@ -155,10 +155,18 @@ process() {
   fi
 
   if [[ -n "$glide" ]] ; then
+    if ! installGlide ; then
+      cleanAndExit $EC_ERROR
+    fi
+
     if ! getDepsByGlide "$package" "$tmp_dir" ; then
       cleanAndExit $EC_ERROR
     fi
   elif [[ -n "$dep" ]] ; then
+    if ! installDep ; then
+      cleanAndExit $EC_ERROR
+    fi
+
     if ! getDepsByDep "$package" "$tmp_dir" ; then
       cleanAndExit $EC_ERROR
     fi
