@@ -64,6 +64,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Thu May 11 2017 Anton Novojilov <andy@essentialkaos.com> - 1.5.0-0
+- [gopack-build] Improved usage info output
 - [gopack] Improved usage info output
 - [gopack] Different dependency management tools support
 
