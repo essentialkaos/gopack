@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.5.0
+Version:         1.5.1
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Fri May 12 2017 Anton Novojilov <andy@essentialkaos.com> - 1.5.1-0
+- [gopack] Fixed bug with using relative path in output
+
 * Thu May 11 2017 Anton Novojilov <andy@essentialkaos.com> - 1.5.0-0
 - [gopack-build] Improved usage info output
 - [gopack] Different dependency management tools support
