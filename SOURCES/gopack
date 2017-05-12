@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.5.0"
+VER="1.5.1"
 
 ########################################################################################
 
@@ -136,7 +136,7 @@ prepare() {
 # Code: No
 # Echo: No
 process() {
-  local package arch_name
+  local package arch_name output_file
 
   package="$1"
   
@@ -189,15 +189,16 @@ process() {
   fi
 
   arch_name=$(getArchName "$output")
+  output_file=$(basename $output)
 
-  mv "$GOPATH/src" "$GOPATH/$arch_name"
-  mv "$GOPATH/REVISIONS" "$GOPATH/$arch_name/"
+  mv "$GOPATH/src" "$tmp_dir/$arch_name"
+  mv "$GOPATH/REVISIONS" "$tmp_dir/$arch_name/"
 
   if ! packSources "$output" ; then
     cleanAndExit $EC_ERROR
   fi
 
-  cp "$GOPATH/$output" .
+  cp "$GOPATH/$output_file" "$output"
 
   [[ -z "$verbose" ]] && show ""
 
