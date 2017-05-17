@@ -69,10 +69,6 @@ useGlide=""
 # Dep usage flag
 useDep=""
 
-#-
-# Action start time
-start=""
-
 ########################################################################################
 
 # Main function

@@ -8,7 +8,7 @@
 
 #### `gopack`
 
-[![demo](https://gh.kaos.io/gopack-140.gif)](#usage-demo)
+[![demo](https://gh.kaos.io/gopack-160.gif)](#usage-demo)
 
 #### `gopack-build`
 
