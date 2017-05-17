@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.5.1"
+VER="1.6.0"
 
 ########################################################################################
 
@@ -68,6 +68,10 @@ useGlide=""
 # -
 # Dep usage flag
 useDep=""
+
+#-
+# Action start time
+start=""
 
 ########################################################################################
 
@@ -142,10 +146,6 @@ process() {
   
   makeTempDir
 
-  if [[ -z "$output" ]] ; then
-    output=$(getOutputName "$package")
-  fi
-
   # Allow redirects for stable import services
   git config --global http.https://pkg.re.followRedirects true &> /dev/null
   git config --global http.https://gopkg.in.followRedirects true &> /dev/null
@@ -188,8 +188,14 @@ process() {
     fi
   fi
 
+  if [[ -z "$output" ]] ; then
+    output=$(getOutputName "$package")
+  fi
+
   arch_name=$(getArchName "$output")
   output_file=$(basename $output)
+
+  cleanPackDir "$GOPATH/src"
 
   mv "$GOPATH/src" "$tmp_dir/$arch_name"
   mv "$GOPATH/REVISIONS" "$tmp_dir/$arch_name/"
@@ -202,7 +208,7 @@ process() {
 
   [[ -z "$verbose" ]] && show ""
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}\n"
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}"
 
   cleanAndExit
 }
@@ -323,7 +329,6 @@ downloadDeps() {
   popd &> /dev/null
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
-  cleanPackDir "$GOPATH/src"
 
   return 0
 }
@@ -394,7 +399,6 @@ getDepsByGlide() {
   popd &> /dev/null
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
-  cleanPackDir "$GOPATH/src"
 
   return 0
 }
@@ -444,8 +448,7 @@ getDepsByDep() {
   popd &> /dev/null
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
-  cleanPackDir "$GOPATH/src"
-
+  
   return 0
 }
 
@@ -557,6 +560,22 @@ getOutputName() {
   local path base
 
   path="$1"
+
+  if [[ -z "$version" ]] ; then
+    pushd $GOPATH/src/$package &>/dev/null
+
+      local git_rev git_ver
+      
+      git_rev=$(git rev-list --tags --max-count=1)
+      git_ver=$(git describe --tags "$git_rev" 2>/dev/null| sed 's/^v//')
+
+      if [[ -n "$git_ver" ]] ; then
+        version="$git_ver"
+      fi
+
+    popd &>/dev/null
+  fi
+
   base=$(basename "$path")
 
   if [[ -n "$version" ]] ; then
@@ -613,7 +632,7 @@ getArchExt() {
 # Code: Yes
 # Echo: No
 execCmd() {
-  local status
+  local status start_time end_time grc_time
 
   if [[ -n "$verbose" ]] ; then
     show "\n\n$SEPARATOR\n" $GREY
@@ -621,14 +640,17 @@ execCmd() {
     status=$?
     show "\n$SEPARATOR\n" $GREY
   else
+    start_time=$(now)
     $@ &> /dev/null
+    end_time=$(now)
     
     status=$?
 
     if [[ $status -ne 0 ]] ; then
       show "ERROR" $RED
     else
-      show "DONE" $GREEN
+      grc_time=$(getGraceTime "$start_time" "$end_time")
+      show "${CL_GREEN}DONE${CL_NORM} ${CL_DARK}($grc_time)${CL_NORM}"
     fi
   fi
 
@@ -667,6 +689,40 @@ isHTTPStatusOk() {
   fi
 
   return 0
+}
+
+# Get action time in grace format (3 min 32 sec)
+#
+# 1: Start timestamp (Number)
+# 2: End timestamp (Number)
+#
+# Code: No
+# Echo: No
+getGraceTime() {
+  local start end tim sec min
+
+  start="$1"
+  end="$2"
+  tim=$((end - start))
+
+  [[ -z "$tim" || "$tim" == "0" ]] && echo "< 1 sec" && return 0
+
+  sec=$((tim % 60))
+  min=$(((tim - sec)/60))
+
+  if [[ $min -eq 0 ]] ; then
+    echo "$sec sec"
+  else
+    echo "$min min $sec sec"
+  fi
+}
+
+# Get current date and time as unix timestamp
+#
+# Code: No
+# Echo: Timestamp (Number)
+now() {
+  date +%s
 }
 
 # Clean temporary data and exit with given exit code
