@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.6.0"
+VER="1.6.1"
 
 ########################################################################################
 
@@ -562,11 +562,14 @@ getOutputName() {
 
       local git_rev git_ver
       
-      git_rev=$(git rev-list --tags --max-count=1)
-      git_ver=$(git describe --tags "$git_rev" 2>/dev/null| sed 's/^v//')
+      git_rev=$(git rev-list --tags --max-count=1 2>/dev/null)
 
-      if [[ -n "$git_ver" ]] ; then
-        version="$git_ver"
+      if [[ -n "$git_rev" ]] ; then
+        git_ver=$(git describe --tags "$git_rev" 2>/dev/null| sed 's/^v//')
+
+        if [[ -n "$git_ver" ]] ; then
+          version="$git_ver"
+        fi
       fi
 
     popd &>/dev/null
