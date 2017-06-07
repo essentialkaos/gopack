@@ -5,13 +5,13 @@ _Before opening an issue, search for similar bug reports or feature requests on 
 **System info:**
 
 * **Version used (`gopack --version`):** 
-* **OS (`cat /etc/*-release`):** 
+* **OS (e.g. from `/etc/*-release`):** 
 * **Kernel (`uname -a`):** 
 * **Go version (`go version`):** 
 * **Bash version (`bash --version`):** 
 * **Install tools:** 
 
-**System info:**
+**Steps to reproduce:**
 
 1. [First Step]
 2. [Second Step]
