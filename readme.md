@@ -20,22 +20,21 @@
 
 ```
 [sudo] yum install -y https://yum.kaos.io/6/release/x86_64/kaos-repo-8.0-0.el6.noarch.rpm
-[sudo] yum install gopack
-[sudo] yum install gopack-build
+[sudo] yum install gopack gopack-build
 ```
 
 #### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
 
 ```
 [sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-8.0-0.el7.noarch.rpm
-[sudo] yum install gopack
-[sudo] yum install gopack-build
+[sudo] yum install gopack gopack-build
 ```
 
 #### From github repo
 
 ```bash
 wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack
+wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack-build
 chmod +x gopack gopack-build
 [sudo] mv gopack gopack-build /usr/bin/
 ```
@@ -100,3 +99,5 @@ Examples
 ### License
 
 [EKOL](https://essentialkaos.com/ekol)
+
+<p align="center"><a href="https://essentialkaos.com"><img src="https://gh.kaos.io/ekgh.svg"/></a></p>
