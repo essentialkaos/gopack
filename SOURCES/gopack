@@ -357,7 +357,7 @@ installGlide() {
     return 0
   fi
 
-  showm "Installing glide... " $BOLD
+  showm "Installing latest version of glide... " $BOLD
 
   if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
     error "Can't install glide" $RED
@@ -406,7 +406,7 @@ installDep() {
     return 0
   fi
 
-  showm "Installing dep... " $BOLD
+  showm "Installing latest version of dep... " $BOLD
 
   if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
     error "Can't install dep" $RED
@@ -434,7 +434,7 @@ getDepsByDep() {
 
   pushd "$GOPATH/src/$package" &> /dev/null
 
-    if ! execCmd "dep" "ensure" "-update" "-v" ; then
+    if ! execCmd "dep" "ensure" "-v" ; then
       error "Can't download package dependencies" $RED
       return 1
     fi

@@ -66,6 +66,7 @@ rm -rf %{buildroot}
 * Mon Sep 18 2017 Anton Novojilov <andy@essentialkaos.com> - 1.8.0-0
 - [gopack] Always try to find and use used dependency manager
 - [gopack] Fixed bug with handling errors while package fetching
+- [gopack] Fixed bug with using dep dependency manager
 
 * Thu Aug 10 2017 Anton Novojilov <andy@essentialkaos.com> - 1.7.0-0
 - [gopack] Improved default output name generation
