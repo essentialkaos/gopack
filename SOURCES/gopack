@@ -3,7 +3,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.7.0"
+VER="1.8.0"
 
 ########################################################################################
 
@@ -46,9 +46,9 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !manager !no_colors 
+SUPPORTED_ARGS="tmp output version revision tag branch !no_colors 
  !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch M:manager
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch 
  nc:!no_colors V:!verbose h:!help"
 
 # Path to temporary dir (String)
@@ -158,9 +158,7 @@ process() {
     cleanAndExit $EC_ERROR
   fi
 
-  if [[ -n "$manager" ]] ; then
-    findUsedDepsManager "$package"
-  fi
+  findUsedDepsManager "$package"
 
   if [[ -n "$useGlide" ]] ; then
     if ! installGlide ; then
@@ -359,7 +357,7 @@ installGlide() {
     return 0
   fi
 
-  showm "Installing glide... " $BOLD
+  showm "Installing latest version of glide... " $BOLD
 
   if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
     error "Can't install glide" $RED
@@ -408,7 +406,7 @@ installDep() {
     return 0
   fi
 
-  showm "Installing dep... " $BOLD
+  showm "Installing latest version of dep... " $BOLD
 
   if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
     error "Can't install dep" $RED
@@ -436,7 +434,7 @@ getDepsByDep() {
 
   pushd "$GOPATH/src/$package" &> /dev/null
 
-    if ! execCmd "dep" "ensure" "-update" "-v" ; then
+    if ! execCmd "dep" "ensure" "-v" ; then
       error "Can't download package dependencies" $RED
       return 1
     fi
@@ -644,10 +642,10 @@ execCmd() {
     show "\n$SEPARATOR\n" $GREY
   else
     start_time=$(now)
-    $@ &> /dev/null
-    end_time=$(now)
-    
+    $@ &> /dev/null   
     status=$?
+
+    end_time=$(now)
 
     if [[ $status -ne 0 ]] ; then
       show "ERROR" $RED
@@ -846,7 +844,6 @@ usage() {
   showo "--branch, -b"    "Target branch" "branch"
   showo "--tag, -t"       "Target tag" "tag"
   showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "path"
-  showo "--manager, -M"   "Use package manager (dep/glide) for downloading dependencies"
   showo "--verbose, -V"   "Verbose output"
   showo "--no-color, -nc" "Disable colors in output"
   showo "--help, -h"      "Show this help message"
