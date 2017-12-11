@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.8.1
+Version:         1.8.2
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -27,7 +27,7 @@ Simple tool for packing golang packages sources with all dependencies.
 %package build
 
 Summary:         Tool for building binaries from sources archive
-Version:         1.1.0
+Version:         1.1.1
 Release:         0%{?dist}
 Group:           Development/Tools
 
@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Tue Dec 12 2017 Anton Novojilov <andy@essentialkaos.com> - 1.8.2-0
+- [gopack|gopack-build] Code refactoring
+
 * Mon Oct 09 2017 Anton Novojilov <andy@essentialkaos.com> - 1.8.1-0
 - [gopack] Improved output name generation
 

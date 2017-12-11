@@ -96,6 +96,13 @@ Examples
 
 ```
 
+### Build Status
+
+| Branch | Status |
+|--------|--------|
+| `master` | [![Build Status](https://travis-ci.org/essentialkaos/gopack.svg?branch=master)](https://travis-ci.org/essentialkaos/gopack) |
+| `develop` | [![Build Status](https://travis-ci.org/essentialkaos/gopack.svg?branch=develop)](https://travis-ci.org/essentialkaos/gopack) |
+
 ### License
 
 [EKOL](https://essentialkaos.com/ekol)
