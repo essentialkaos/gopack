@@ -1,4 +1,6 @@
-## GoPack [![Code Climate](https://codeclimate.com/github/essentialkaos/gopack/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/gopack) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
+<p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
+
+<p align="center"><a href="#readme"><img src="https://gh.kaos.io/gopack.svg"/></a></p>
 
 `gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies and packs it into an archive.
 
@@ -95,6 +97,13 @@ Examples
   to directory /home/user
 
 ```
+
+### Build Status
+
+| Branch | Status |
+|--------|--------|
+| `master` | [![Build Status](https://travis-ci.org/essentialkaos/gopack.svg?branch=master)](https://travis-ci.org/essentialkaos/gopack) |
+| `develop` | [![Build Status](https://travis-ci.org/essentialkaos/gopack.svg?branch=develop)](https://travis-ci.org/essentialkaos/gopack) |
 
 ### License
 

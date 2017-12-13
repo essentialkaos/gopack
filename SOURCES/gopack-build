@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1117,SC2034,SC2154,SC2181
 
 ########################################################################################
 
 APP="GoPack Build"
-VER="1.1.0"
+VER="1.1.1"
 
 ########################################################################################
 
@@ -133,7 +134,9 @@ prepare() {
 # Echo: No
 process() {
   local src="$1"
-  local src_name=$(basename "$src")
+  local src_name
+
+  src_name=$(basename "$src")
 
   makeTempDir
 
@@ -195,7 +198,7 @@ buildBinaries() {
 
   setupGoEnv "$tmp_dir"
 
-  mv $tmp_dir/$pkg_name/* $tmp_dir/src/
+  mv "$tmp_dir/$pkg_name"/* "$tmp_dir/src/"
   
   binaries=$(findBinaries "$tmp_dir")
 
@@ -271,7 +274,7 @@ unpackSources() {
 
   showm "Unpacking sources... "
 
-  pushd $tmp_dir &> /dev/null
+  pushd $tmp_dir &> /dev/null || cleanAndExit 1
 
   if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
     tar czf "$src_name"
@@ -299,7 +302,7 @@ unpackSources() {
     has_errors=true
   fi
 
-  popd &> /dev/null
+  popd &> /dev/null || cleanAndExit 1
 
   if [[ -n "$has_errors" ]] ; then
     cleanAndExit $EC_ERROR
@@ -594,6 +597,7 @@ while [[ -n "$1" ]] ; do
     if [[ -z "$argn" ]] ; then
       argn=$arg
     else
+      # shellcheck disable=SC2015
       [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
       argn=$arg
     fi
@@ -623,7 +627,8 @@ while [[ -n "$1" ]] ; do
         shift && continue
       fi
 
-      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[@]:1:99}" || declare "$argm=${arg[@]:1:99}"
+      # shellcheck disable=SC2015
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[*]:1:99}" || declare "$argm=${arg[*]:1:99}"
 
       unset argm && shift && continue
     else
@@ -632,6 +637,7 @@ while [[ -n "$1" ]] ; do
       if [[ -z "$argn" ]] ; then
         argn=$arg
       else
+        # shellcheck disable=SC2015
         [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
         argn=$arg
       fi
@@ -651,6 +657,7 @@ while [[ -n "$1" ]] ; do
     fi
   else
     if [[ -n "$argn" ]] ; then
+      # shellcheck disable=SC2015
       [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare "$argn=${!argn} $1" || declare "$argn=$1"
 
       unset argn && shift && continue
@@ -665,6 +672,7 @@ done
 
 unset arg argn argm argk
 
+# shellcheck disable=SC2015,SC2086
 [[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
 
 ########################################################################################

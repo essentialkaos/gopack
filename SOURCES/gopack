@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1117,SC2034,SC2154
 
 ########################################################################################
 
 APP="GoPack"
-VER="1.8.1"
+VER="1.8.2"
 
 ########################################################################################
 
@@ -187,7 +188,7 @@ process() {
   fi
 
   arch_name=$(getArchName "$output")
-  output_file=$(basename $output)
+  output_file=$(basename "$output")
 
   cleanPackDir "$GOPATH/src"
 
@@ -265,7 +266,7 @@ checkoutCode() {
     return 1
   fi
 
-  pushd "$GOPATH/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if [[ -n "$revision" ]] ; then
       showm "Switching HEAD to revision $revision... " $BOLD
@@ -294,7 +295,7 @@ checkoutCode() {
       fi
     fi
 
-  popd &> /dev/null
+  popd &> /dev/null || printCDErrorAndExit
 
   return 0
 }
@@ -313,14 +314,14 @@ downloadDeps() {
 
   showm "Downloading dependencies... " $BOLD
 
-  pushd "$GOPATH/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "go" "get" "-d" "-v" "./..." ; then
       error "Can't download package dependencies" $RED
       return 1
     fi
 
-  popd &> /dev/null
+  popd &> /dev/null || printCDErrorAndExit
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
 
@@ -383,14 +384,14 @@ getDepsByGlide() {
 
   showm "Downloading dependencies with glide... " $BOLD
 
-  pushd "$GOPATH/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "glide" "install" ; then
       error "Can't download package dependencies" $RED
       return 1
     fi
 
-  popd &> /dev/null
+  popd &> /dev/null || printCDErrorAndExit
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
 
@@ -432,14 +433,14 @@ getDepsByDep() {
 
   showm "Downloading dependencies with dep... " $BOLD
 
-  pushd "$GOPATH/src/$package" &> /dev/null
+  pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "dep" "ensure" "-v" ; then
       error "Can't download package dependencies" $RED
       return 1
     fi
 
-  popd &> /dev/null
+  popd &> /dev/null || printCDErrorAndExit
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
   
@@ -459,26 +460,26 @@ saveLatestCommitsHash() {
   dir="$1"
   output="$2"
 
-  pushd "$dir" &> /dev/null
+  pushd "$dir" &> /dev/null || printCDErrorAndExit
 
     while IFS= read -r -d '' git_dir ; do
 
-      pushd "$git_dir" &> /dev/null
+      pushd "$git_dir" &> /dev/null || printCDErrorAndExit
 
-        pushd .. &> /dev/null
+        pushd .. &> /dev/null || printCDErrorAndExit
 
           repo_dir=$(dirname "${git_dir:2:9999}")
           head_hash=$(git rev-parse HEAD)
 
-        popd &> /dev/null
+        popd &> /dev/null || printCDErrorAndExit
 
         echo "$head_hash $repo_dir" >> "$output"
 
-      popd &> /dev/null
+      popd &> /dev/null || printCDErrorAndExit
 
     done < <(find . -name ".git" -type d -print0)
 
-  popd &> /dev/null
+  popd &> /dev/null || printCDErrorAndExit
 }
 
 # Remove repo data and CI services configs
@@ -521,7 +522,7 @@ packSources() {
 
   showm "Packing sources... " $BOLD
 
-  pushd "$GOPATH" &> /dev/null
+  pushd "$GOPATH" &> /dev/null || printCDErrorAndExit
 
     if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
@@ -539,7 +540,7 @@ packSources() {
       return 1
     fi
 
-  popd &> /dev/null
+  popd &> /dev/null || printCDErrorAndExit
 
   return 0
 }
@@ -556,11 +557,11 @@ getOutputName() {
   path="$1"
 
   if [[ -z "$version" && -n "$tag" ]] ; then
-    version=$(echo "$tag" | sed 's/^v//')
+    version="${tag#v}"
   fi
 
   if [[ -z "$version" ]] ; then
-    pushd $GOPATH/src/$package &>/dev/null
+    pushd "$GOPATH/src/$package" &>/dev/null || printCDErrorAndExit
 
       local git_rev git_ver
       
@@ -574,7 +575,7 @@ getOutputName() {
         fi
       fi
 
-    popd &>/dev/null
+    popd &>/dev/null || printCDErrorAndExit
   fi
 
   base=$(basename "$path" | cut -f1 -d'.')
@@ -637,11 +638,13 @@ execCmd() {
 
   if [[ -n "$verbose" ]] ; then
     show "\n\n$SEPARATOR\n" $GREY
+    # shellcheck disable=SC2068
     $@
     status=$?
     show "\n$SEPARATOR\n" $GREY
   else
     start_time=$(now)
+    # shellcheck disable=SC2068
     $@ &> /dev/null   
     status=$?
 
@@ -724,6 +727,15 @@ getGraceTime() {
 # Echo: Timestamp (Number)
 now() {
   date +%s
+}
+
+# Print error and exit
+#
+# Code: No
+# Echo: No
+printCDErrorAndExit() {
+  error "Can't set working directory"
+  cleanAndExit $EC_ERROR
 }
 
 # Clean temporary data and exit with given exit code
@@ -902,6 +914,7 @@ while [[ -n "$1" ]] ; do
     if [[ -z "$argn" ]] ; then
       argn=$arg
     else
+      # shellcheck disable=SC2015
       [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
       argn=$arg
     fi
@@ -931,7 +944,8 @@ while [[ -n "$1" ]] ; do
         shift && continue
       fi
 
-      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[@]:1:99}" || declare "$argm=${arg[@]:1:99}"
+      # shellcheck disable=SC2015
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[*]:1:99}" || declare "$argm=${arg[*]:1:99}"
 
       unset argm && shift && continue
     else
@@ -940,6 +954,7 @@ while [[ -n "$1" ]] ; do
       if [[ -z "$argn" ]] ; then
         argn=$arg
       else
+        # shellcheck disable=SC2015
         [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
         argn=$arg
       fi
@@ -959,6 +974,7 @@ while [[ -n "$1" ]] ; do
     fi
   else
     if [[ -n "$argn" ]] ; then
+      # shellcheck disable=SC2015
       [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare "$argn=${!argn} $1" || declare "$argn=$1"
 
       unset argn && shift && continue
@@ -973,6 +989,7 @@ done
 
 unset arg argn argm argk
 
+# shellcheck disable=SC2015,SC2086
 [[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
 
 ########################################################################################

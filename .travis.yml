@@ -1,0 +1,17 @@
+language: bash
+
+sudo: false
+
+addons:
+  apt:
+    sources:
+      - debian-sid
+    packages:
+      - shellcheck
+
+script:
+ - bash -c 'shopt -s globstar; shellcheck SOURCES/gopack'
+ - bash -c 'shopt -s globstar; shellcheck SOURCES/gopack-build'
+
+matrix:
+  fast_finish: true
