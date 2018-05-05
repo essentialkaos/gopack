@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack Build"
-VER="1.1.1"
+VER="1.1.2"
 
 ########################################################################################
 
@@ -174,7 +174,7 @@ downloadSources() {
   local file_name
   file_name=$(basename "$url")
 
-  show "Dowloading sources..."
+  show "Dowloading sources…"
 
   curl -L --max-redirs 10 --progress-bar "$url" -o "$tmp_dir/$file_name"
 
@@ -212,7 +212,7 @@ buildBinaries() {
     output="."
   fi
 
-  show "Building binaries..."
+  show "Building binaries…"
 
   for binary in $binaries ; do
     binary_name=$(basename "$binary")
@@ -272,7 +272,7 @@ unpackSources() {
 
   arch_ext=$(getArchExt "$src_name")
 
-  showm "Unpacking sources... "
+  showm "Unpacking sources… "
 
   pushd $tmp_dir &> /dev/null || cleanAndExit 1
 

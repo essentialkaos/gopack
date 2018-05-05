@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.8.2"
+VER="1.8.3"
 
 ########################################################################################
 
@@ -149,7 +149,7 @@ process() {
 
   trap termExit SIGINT SIGQUIT SIGTERM
 
-  showm "Setting temporary Go environment variables... " $BOLD
+  showm "Setting temporary Go environment variables… " $BOLD
 
   setupGoEnv "$tmp_dir"
 
@@ -251,7 +251,7 @@ checkoutCode() {
   git_path="https://$package.git"
   package_name=$(basename "$package")
 
-  showm "Downloading sources... " $BOLD
+  showm "Downloading sources… " $BOLD
 
   if ! isHTTPStatusOk "$git_path" ; then
     show "ERROR" $RED
@@ -269,7 +269,7 @@ checkoutCode() {
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if [[ -n "$revision" ]] ; then
-      showm "Switching HEAD to revision $revision... " $BOLD
+      showm "Switching HEAD to revision $revision… " $BOLD
 
       if ! execCmd "git" "checkout" "$revision" ; then
         error "Can't checkout revision ${CL_BL_RED}${revision}" $RED
@@ -278,7 +278,7 @@ checkoutCode() {
     fi
 
     if [[ -n "$branch" ]] ; then
-      showm "Switching HEAD to branch $branch... " $BOLD
+      showm "Switching HEAD to branch $branch… " $BOLD
 
       if ! execCmd "git" "checkout" "$branch" ; then
         error "Can't checkout branch ${CL_BL_RED}${branch}" $RED
@@ -287,7 +287,7 @@ checkoutCode() {
     fi
 
     if [[ -n "$tag" ]] ; then
-      showm "Switching HEAD to tag $tag... " $BOLD
+      showm "Switching HEAD to tag $tag… " $BOLD
 
       if ! execCmd "git" "checkout" "$tag" ; then
         error "Can't checkout tag ${CL_BL_RED}${tag}" $RED
@@ -312,7 +312,7 @@ downloadDeps() {
 
   package="$1"
 
-  showm "Downloading dependencies... " $BOLD
+  showm "Downloading dependencies… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
@@ -358,7 +358,7 @@ installGlide() {
     return 0
   fi
 
-  showm "Installing latest version of glide... " $BOLD
+  showm "Installing latest version of glide… " $BOLD
 
   if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
     error "Can't install glide" $RED
@@ -382,7 +382,7 @@ getDepsByGlide() {
 
   package="$1"
 
-  showm "Downloading dependencies with glide... " $BOLD
+  showm "Downloading dependencies with glide… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
@@ -407,7 +407,7 @@ installDep() {
     return 0
   fi
 
-  showm "Installing latest version of dep... " $BOLD
+  showm "Installing latest version of dep… " $BOLD
 
   if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
     error "Can't install dep" $RED
@@ -431,7 +431,7 @@ getDepsByDep() {
 
   package="$1"
 
-  showm "Downloading dependencies with dep... " $BOLD
+  showm "Downloading dependencies with dep… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
@@ -520,7 +520,7 @@ packSources() {
   arch_name=$(getArchName "$output")
   arch_ext=$(getArchExt "$output")
 
-  showm "Packing sources... " $BOLD
+  showm "Packing sources… " $BOLD
 
   pushd "$GOPATH" &> /dev/null || printCDErrorAndExit
 
