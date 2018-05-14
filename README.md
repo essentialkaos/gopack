@@ -1,6 +1,6 @@
-<p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
+<p align="center"><a href="#readme"><img src="https://gh.kaos.st/gopack.svg"/></a></p>
 
-<p align="center"><a href="#readme"><img src="https://gh.kaos.io/gopack.svg"/></a></p>
+<p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
 
 `gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies and packs it into an archive.
 
@@ -10,25 +10,25 @@
 
 #### `gopack`
 
-[![demo](https://gh.kaos.io/gopack-160.gif)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-160.gif)](#usage-demo)
 
 #### `gopack-build`
 
-[![demo](https://gh.kaos.io/gopack-build-100.gif)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-build-100.gif)](#usage-demo)
 
 ### Installation
 
 #### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
 
 ```
-[sudo] yum install -y https://yum.kaos.io/6/release/x86_64/kaos-repo-8.0-0.el6.noarch.rpm
+[sudo] yum install -y https://yum.kaos.st/6/release/x86_64/kaos-repo-9.1-0.el6.noarch.rpm
 [sudo] yum install gopack gopack-build
 ```
 
 #### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
 
 ```
-[sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-8.0-0.el7.noarch.rpm
+[sudo] yum install -y https://yum.kaos.st/7/release/x86_64/kaos-repo-9.1-0.el7.noarch.rpm
 [sudo] yum install gopack gopack-build
 ```
 
@@ -109,4 +109,4 @@ Examples
 
 [EKOL](https://essentialkaos.com/ekol)
 
-<p align="center"><a href="https://essentialkaos.com"><img src="https://gh.kaos.io/ekgh.svg"/></a></p>
+<p align="center"><a href="https://essentialkaos.com"><img src="https://gh.kaos.st/ekgh.svg"/></a></p>
