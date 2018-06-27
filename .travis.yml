@@ -1,14 +1,26 @@
 language: bash
 
-sudo: false
+sudo: required
+
+services:
+  - docker
+
+matrix:
+  fast_finish: true
+
+env:
+  global:
+    - IMAGE=essentialkaos/perfecto:centos7
 
 before_install:
   - wget https://storage.googleapis.com/shellcheck/shellcheck-latest.linux.x86_64.tar.xz
   - tar xf shellcheck-latest.linux.x86_64.tar.xz
+  - ./shellcheck-latest/shellcheck --version
+  - docker pull "$IMAGE"
+  - wget https://raw.githubusercontent.com/essentialkaos/perfecto/master/perfecto-docker
+  - chmod +x perfecto-docker
 
 script:
  - bash -c 'shopt -s globstar; ./shellcheck-latest/shellcheck SOURCES/gopack'
  - bash -c 'shopt -s globstar; ./shellcheck-latest/shellcheck SOURCES/gopack-build'
-
-matrix:
-  fast_finish: true
+ - ./perfecto-docker gopack.spec
