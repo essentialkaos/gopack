@@ -27,7 +27,7 @@ Simple tool for packing golang packages sources with all dependencies.
 %package build
 
 Summary:         Tool for building binaries from sources archive created by gopack
-Version:         1.1.2
+Version:         1.1.3
 Release:         0%{?dist}
 Group:           Development/Tools
 
@@ -45,7 +45,7 @@ rm -rf %{buildroot}
 
 install -dm 755 %{buildroot}%{_bindir}
 install -pm 775 %{name} %{buildroot}%{_bindir}/%{name}
-install -pm 775 %{name} %{buildroot}%{_bindir}/%{name}-build
+install -pm 775 %{name}-build %{buildroot}%{_bindir}/%{name}-build
 
 %clean
 rm -rf %{buildroot}
