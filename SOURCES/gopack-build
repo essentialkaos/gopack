@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack Build"
-VER="1.1.2"
+VER="1.1.3"
 
 ########################################################################################
 
@@ -263,7 +263,11 @@ setupGoEnv() {
 # Code: No
 # Echo: No
 findBinaries() {
-  grep --include='*.go' -rn '^package main$' "$1" 2>/dev/null | cut -f1 -d':'
+  local main_pkg
+
+  main_pkg=$(head -1 "$1/src/REVISIONS" | cut -f2 -d" ")
+
+  grep --include='*.go' -rn '^package main$' "$1/src/$main_pkg" 2>/dev/null | cut -f1 -d':'
 }
 
 unpackSources() {

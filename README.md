@@ -2,7 +2,7 @@
 
 <p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
 
-`gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies and packs it into an archive.
+`gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies (through `glide`, `dep` or `go get`) and packs them into an archive.
 
 `gopack-build` is a simple tool for building binaries from sources archive.
 
@@ -10,11 +10,11 @@
 
 #### `gopack`
 
-[![demo](https://gh.kaos.st/gopack-160.gif)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-183.svg)](#usage-demo)
 
 #### `gopack-build`
 
-[![demo](https://gh.kaos.st/gopack-build-100.gif)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-build-113.svg)](#usage-demo)
 
 ### Installation
 
@@ -56,7 +56,6 @@ Options
   --branch, -b branch         Target branch
   --tag, -t tag               Target tag
   --tmp, -T path              Path to temporary directory (/tmp by default)
-  --manager, -M               Use package manager (dep/glide) for downloading dependencies
   --verbose, -V               Verbose output
   --no-color, -nc             Disable colors in output
   --help, -h                  Show this help message
