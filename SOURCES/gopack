@@ -5,6 +5,7 @@
 
 APP="GoPack"
 VER="1.8.3"
+DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ########################################################################################
 
@@ -844,7 +845,7 @@ error() {
 # Echo: No
 usage() {
   show ""
-  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Simple tool for packing golang packages sources with all dependencies"
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - $DESC"
   show ""
   show "${CL_BOLD}Usage:${CL_NORM} gopack ${CL_GREEN}{options}${CL_NORM} package-path"
   show ""

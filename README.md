@@ -32,13 +32,20 @@
 [sudo] yum install gopack gopack-build
 ```
 
-#### From github repo
+#### From GitHub repository
 
 ```bash
-wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack
-wget https://raw.githubusercontent.com/essentialkaos/gopack/master/SOURCES/gopack-build
+wget https://kaos.sh/gopack/SOURCES/gopack
+wget https://kaos.sh/gopack/SOURCES/gopack-build
 chmod +x gopack gopack-build
 [sudo] mv gopack gopack-build /usr/bin/
+```
+
+Also, you can use the latest version of utilities without installation:
+
+```bash
+bash <(curl -fsSL https://kaos.sh/gopack/SOURCES/gopack) # pass options here
+bash <(curl -fsSL https://kaos.sh/gopack/SOURCES/gopack-build) # pass options here
 ```
 
 ### Usage
