@@ -2,6 +2,11 @@
 
 <p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
 
+<p align="center">
+  <a href="https://travis-ci.org/essentialkaos/gopack"><img src="https://travis-ci.org/essentialkaos/gopack.svg"></a>
+  <a href="https://essentialkaos.com/ekol"><img src="https://gh.kaos.st/ekol.svg"></a>
+</p>
+
 `gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies (through `glide`, `dep` or `go get`) and packs them into an archive.
 
 `gopack-build` is a simple tool for building binaries from sources archive.
