@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.8.3
+Version:         1.8.4
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Wed Jan 23 2019 Anton Novojilov <andy@essentialkaos.com> - 1.8.4-0
+- [gopack] Fixed bug with checking used dependency manager
+
 * Sun May 06 2018 Anton Novojilov <andy@essentialkaos.com> - 1.8.3-0
 - [gopack|gopack-build] Minor UI improvements
 

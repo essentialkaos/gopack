@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.8.3"
+VER="1.8.4"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ########################################################################################
@@ -341,11 +341,11 @@ findUsedDepsManager() {
 
   package="$1"
 
-  if [[ $(find "$GOPATH/src/$package" -name "Gopkg.toml" | wc -l) != "0" ]] ; then
+  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "Gopkg.toml" | wc -l) != "0" ]] ; then
     useDep=true
   fi
 
-  if [[ $(find "$GOPATH/src/$package" -name "glide.yaml" | wc -l) != "0" ]] ; then
+  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "glide.yaml" | wc -l) != "0" ]] ; then
     useGlide=true
   fi
 }
