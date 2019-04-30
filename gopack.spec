@@ -64,6 +64,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Wed May 01 2019 Anton Novojilov <andy@essentialkaos.com> - 1.9.0-0
+- [gopack] Added XZ support
 - [gopack] Improved sources cleanup
 - [gopack] Minor UI improvements
 

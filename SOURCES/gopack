@@ -46,7 +46,7 @@ SEPARATOR="---------------------------------------------------------------------
 
 TMP_TEMPLATE="gopack-XXXXXXXX"
 
-SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
+SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
 
 SUPPORTED_ARGS="tmp output version revision tag branch !no_colors 
  !verbose !help !usage"
@@ -543,7 +543,12 @@ packSources() {
       if ! execCmd "tar" "cjfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
         error "Can't pack sources" $RED
         return 1
-      fi   
+      fi
+    elif [[ "$arch_ext" == "tar.xz" || "$arch_ext" == "txz" ]] ; then
+      if ! execCmd "tar" "cfJ" "${arch_name}.${arch_ext}" "$arch_name" ; then
+        error "Can't pack sources" $RED
+        return 1
+      fi
     else
       show "ERROR\n" $RED
       error "Unknown archive type" $RED
