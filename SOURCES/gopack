@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.8.3"
+VER="1.9.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ########################################################################################
@@ -46,7 +46,7 @@ SEPARATOR="---------------------------------------------------------------------
 
 TMP_TEMPLATE="gopack-XXXXXXXX"
 
-SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
+SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
 
 SUPPORTED_ARGS="tmp output version revision tag branch !no_colors 
  !verbose !help !usage"
@@ -138,10 +138,10 @@ prepare() {
 # Code: No
 # Echo: No
 process() {
-  local package arch_name output_file
+  local package arch_name output_file output_size
 
   package="$1"
-  
+
   makeTempDir
 
   # Allow redirects for stable import services
@@ -204,7 +204,10 @@ process() {
 
   [[ -z "$verbose" ]] && show ""
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}"
+  # shellcheck disable=SC2012
+  output_size=$(ls -lah "$output" | awk -F " " '{print $5}')
+
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_DARK} (${output_size})${CL_NORM}"
 
   cleanAndExit
 }
@@ -341,11 +344,11 @@ findUsedDepsManager() {
 
   package="$1"
 
-  if [[ $(find "$GOPATH/src/$package" -name "Gopkg.toml" | wc -l) != "0" ]] ; then
+  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "Gopkg.toml" | wc -l) != "0" ]] ; then
     useDep=true
   fi
 
-  if [[ $(find "$GOPATH/src/$package" -name "glide.yaml" | wc -l) != "0" ]] ; then
+  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "glide.yaml" | wc -l) != "0" ]] ; then
     useGlide=true
   fi
 }
@@ -444,7 +447,7 @@ getDepsByDep() {
   popd &> /dev/null || printCDErrorAndExit
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
-  
+
   return 0
 }
 
@@ -492,10 +495,13 @@ saveLatestCommitsHash() {
 cleanPackDir() {
   local dir="$1"
 
+  # Remove CSV data
   find "$dir" -type d -name ".git" -exec rm -rf {} \; &>/dev/null
   find "$dir" -type f -name ".gitignore" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".gitattributes" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".gitmodules" -exec rm -f {} \; &>/dev/null
+
+  # Remove CI service configuration files
   find "$dir" -type f -name ".travis.yml" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".drone.sec" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".drone.yml" -exec rm -f {} \; &>/dev/null
@@ -503,6 +509,10 @@ cleanPackDir() {
   find "$dir" -type f -name ".vexor.yml" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".codebeatsettings" -exec rm -f {} \; &>/dev/null
 
+  # Remove test data
+  find "$dir" -type d -name "testdata" -exec rm -rf {} \; &>/dev/null
+
+  # Remove empty directories
   find "$dir" -type d -empty -delete &>/dev/null
 }
 
@@ -525,7 +535,7 @@ packSources() {
 
   pushd "$GOPATH" &> /dev/null || printCDErrorAndExit
 
-    if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
+    if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
         error "Can't pack sources" $RED
         return 1
@@ -534,7 +544,12 @@ packSources() {
       if ! execCmd "tar" "cjfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
         error "Can't pack sources" $RED
         return 1
-      fi   
+      fi
+    elif [[ "$arch_ext" == "tar.xz" || "$arch_ext" == "txz" ]] ; then
+      if ! execCmd "tar" "cfJ" "${arch_name}.${arch_ext}" "$arch_name" ; then
+        error "Can't pack sources" $RED
+        return 1
+      fi
     else
       show "ERROR\n" $RED
       error "Unknown archive type" $RED
@@ -565,7 +580,7 @@ getOutputName() {
     pushd "$GOPATH/src/$package" &>/dev/null || printCDErrorAndExit
 
       local git_rev git_ver
-      
+
       git_rev=$(git rev-list --tags --max-count=1 2>/dev/null)
 
       if [[ -n "$git_rev" ]] ; then
@@ -646,7 +661,7 @@ execCmd() {
   else
     start_time=$(now)
     # shellcheck disable=SC2068
-    $@ &> /dev/null   
+    $@ &> /dev/null
     status=$?
 
     end_time=$(now)
