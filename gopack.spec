@@ -65,6 +65,7 @@ rm -rf %{buildroot}
 %changelog
 * Wed May 01 2019 Anton Novojilov <andy@essentialkaos.com> - 1.9.0-0
 - [gopack] Improved sources cleanup
+- [gopack] Minor UI improvements
 
 * Wed Jan 23 2019 Anton Novojilov <andy@essentialkaos.com> - 1.8.4-0
 - [gopack] Fixed bug with checking used dependency manager

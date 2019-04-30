@@ -138,7 +138,7 @@ prepare() {
 # Code: No
 # Echo: No
 process() {
-  local package arch_name output_file
+  local package arch_name output_file output_size
 
   package="$1"
   
@@ -204,7 +204,9 @@ process() {
 
   [[ -z "$verbose" ]] && show ""
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_NORM}"
+  output_size=$(ls -lah "$output" | awk -F " " {'print $5'})
+
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_DARK} (${output_size})${CL_NORM}"
 
   cleanAndExit
 }
