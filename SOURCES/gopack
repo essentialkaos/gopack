@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.8.4"
+VER="1.9.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ########################################################################################
@@ -492,10 +492,13 @@ saveLatestCommitsHash() {
 cleanPackDir() {
   local dir="$1"
 
+  # Remove CSV data
   find "$dir" -type d -name ".git" -exec rm -rf {} \; &>/dev/null
   find "$dir" -type f -name ".gitignore" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".gitattributes" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".gitmodules" -exec rm -f {} \; &>/dev/null
+
+  # Remove CI service configuration files
   find "$dir" -type f -name ".travis.yml" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".drone.sec" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".drone.yml" -exec rm -f {} \; &>/dev/null
@@ -503,6 +506,10 @@ cleanPackDir() {
   find "$dir" -type f -name ".vexor.yml" -exec rm -f {} \; &>/dev/null
   find "$dir" -type f -name ".codebeatsettings" -exec rm -f {} \; &>/dev/null
 
+  # Remove test data
+  find "$dir" -type d -name "testdata" -exec rm -rf {} \; &>/dev/null
+
+  # Remove empty directories
   find "$dir" -type d -empty -delete &>/dev/null
 }
 
