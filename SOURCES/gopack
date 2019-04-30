@@ -141,7 +141,7 @@ process() {
   local package arch_name output_file output_size
 
   package="$1"
-  
+
   makeTempDir
 
   # Allow redirects for stable import services
@@ -446,7 +446,7 @@ getDepsByDep() {
   popd &> /dev/null || printCDErrorAndExit
 
   saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
-  
+
   return 0
 }
 
@@ -534,7 +534,7 @@ packSources() {
 
   pushd "$GOPATH" &> /dev/null || printCDErrorAndExit
 
-    if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then 
+    if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
         error "Can't pack sources" $RED
         return 1
@@ -579,7 +579,7 @@ getOutputName() {
     pushd "$GOPATH/src/$package" &>/dev/null || printCDErrorAndExit
 
       local git_rev git_ver
-      
+
       git_rev=$(git rev-list --tags --max-count=1 2>/dev/null)
 
       if [[ -n "$git_rev" ]] ; then
@@ -660,7 +660,7 @@ execCmd() {
   else
     start_time=$(now)
     # shellcheck disable=SC2068
-    $@ &> /dev/null   
+    $@ &> /dev/null
     status=$?
 
     end_time=$(now)
