@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.9.0
+Version:         1.10.0
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -63,6 +63,12 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Thu Jul 04 2019 Anton Novojilov <andy@essentialkaos.com> - 1.10.0-0
+- [gopack] Added a new way to remove useless source code after installing
+  package managers
+- [gopack] Added go mod support
+- [gopack] Improved source downloading mechanics
+
 * Wed May 01 2019 Anton Novojilov <andy@essentialkaos.com> - 1.9.0-0
 - [gopack] Added XZ support
 - [gopack] Improved sources cleanup
