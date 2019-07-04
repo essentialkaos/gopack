@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1117,SC2034,SC2154
+# shellcheck disable=SC1117,SC2034,SC2128,SC2154,SC2178
 
 ########################################################################################
 
 APP="GoPack"
-VER="1.9.0"
+VER="1.10.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ########################################################################################
@@ -48,9 +48,9 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !no_colors 
- !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch 
+SUPPORTED_ARGS="tmp output version revision tag branch !preserve_vendor 
+ !no_colors !verbose !help !usage"
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch pv:!preserve_vendor 
  nc:!no_colors V:!verbose h:!help"
 
 # Path to temporary dir (String)
@@ -70,6 +70,10 @@ useGlide=""
 # -
 # Dep usage flag
 useDep=""
+
+# -
+# Go modules usage flag
+useMod=""
 
 ########################################################################################
 
@@ -101,32 +105,32 @@ main() {
 # Echo: No
 prepare() {
   if [[ -z "$tmp" ]] ; then
-    error "Path to temporary directory can't be empty" $RED
+    error "Path to temporary directory can't be empty"
     exit $EC_ERROR
   fi
 
   if [[ ! -d "$tmp" ]] ; then
-    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist" $RED
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist"
     exit $EC_ERROR
   fi
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
-    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable" $RED
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable"
     exit $EC_ERROR
   fi
 
   if ! isAppInstalled "go" ; then
-    error "This utility require go. Install it first." $RED
+    error "This utility require go. Install it first."
     exit $EC_ERROR
   fi
 
   if ! isAppInstalled "curl" ; then
-    error "This utility require curl. Install it first." $RED
+    error "This utility require curl. Install it first."
     exit $EC_ERROR
   fi
 
   if [[ -n "$output" && -z $(getArchExt "$output") ]] ; then
-    error "Unsupported output format" $RED
+    error "Unsupported output format"
     exit $EC_ERROR
   fi
 }
@@ -162,6 +166,10 @@ process() {
 
   findUsedDepsManager "$package"
 
+  if [[ -n "$preserve_vendor" ]] ; then
+    saveVendorData "$package"
+  fi
+
   if [[ -n "$useGlide" ]] ; then
     if ! installGlide ; then
       cleanAndExit $EC_ERROR
@@ -178,10 +186,18 @@ process() {
     if ! getDepsByDep "$package" ; then
       cleanAndExit $EC_ERROR
     fi
+  elif [[ -n "$useMod" ]] ; then
+    if ! getDepsByMod "$package" ; then
+      cleanAndExit $EC_ERROR
+    fi
   else
     if ! downloadDeps "$package" ; then
       cleanAndExit $EC_ERROR
     fi
+  fi
+
+  if [[ -n "$preserve_vendor" ]] ; then
+    restoreVendorData "$package"
   fi
 
   if [[ -z "$output" ]] ; then
@@ -259,15 +275,32 @@ checkoutCode() {
 
   if ! isHTTPStatusOk "$git_path" ; then
     show "ERROR" $RED
-    error "Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible" $RED
+    error "Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible"
     return 1
   fi
 
   mkdir -p "$GOPATH/src/$package"
 
-  if ! execCmd "git" "clone" "$git_path" "$GOPATH/src/$package/" ; then
-    error "Error while cloning repository ${CL_BL_RED}${git_path}" $RED
-    return 1
+  if [[ -n "$branch" ]] ; then
+    if ! execCmd "git" "clone" "--depth=1" "--branch=$branch" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path} (branch: $branch)"
+      return 1
+    fi
+  elif [[ -n "$tag" ]] ; then
+    if ! execCmd "git" "clone" "--depth=1" "--branch=$tag" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path} (tag: $tag)"
+      return 1
+    fi
+  elif [[ -n "$revision" ]]; then
+    if ! execCmd "git" "clone" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path} (rev: $revision)"
+      return 1
+    fi
+  else
+    if ! execCmd "git" "clone" "--depth=1" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path}"
+      return 1
+    fi
   fi
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
@@ -276,25 +309,7 @@ checkoutCode() {
       showm "Switching HEAD to revision $revision… " $BOLD
 
       if ! execCmd "git" "checkout" "$revision" ; then
-        error "Can't checkout revision ${CL_BL_RED}${revision}" $RED
-        return 1
-      fi
-    fi
-
-    if [[ -n "$branch" ]] ; then
-      showm "Switching HEAD to branch $branch… " $BOLD
-
-      if ! execCmd "git" "checkout" "$branch" ; then
-        error "Can't checkout branch ${CL_BL_RED}${branch}" $RED
-        return 1
-      fi
-    fi
-
-    if [[ -n "$tag" ]] ; then
-      showm "Switching HEAD to tag $tag… " $BOLD
-
-      if ! execCmd "git" "checkout" "$tag" ; then
-        error "Can't checkout tag ${CL_BL_RED}${tag}" $RED
+        error "Can't fetch revision ${CL_BL_RED}${revision}"
         return 1
       fi
     fi
@@ -302,6 +317,46 @@ checkoutCode() {
   popd &> /dev/null || printCDErrorAndExit
 
   return 0
+}
+
+# Backup vendor data
+#
+# 1: Package name (String)
+#
+# Code: No
+# Echo: No
+saveVendorData() {
+  local package="$1"
+
+  if [[ ! -e "$GOPATH/src/$package/vendor" ]] ; then
+    return
+  fi
+
+  cp -rlp "$GOPATH/src/$package/vendor" "$GOPATH/vendor_backup"
+  rm -rf "$GOPATH/src/$package/vendor/" &> /dev/null
+}
+
+# Restore vendor data
+#
+# 1: Package name (String)
+#
+# Code: No
+# Echo: No
+restoreVendorData() {
+  local package="$1"
+
+  if [[ ! -e "$GOPATH/vendor_backup" ]] ; then
+    return
+  fi
+
+  if [[ ! -e "$GOPATH/src/$package/vendor" ]] ; then
+    mkdir "$GOPATH/src/$package/vendor"
+  fi
+
+  # shellcheck disable=SC2216
+  yes | cp -rf "$GOPATH/vendor_backup"/* "$GOPATH/src/$package/vendor/" &> /dev/null
+
+  rm -rf "$GOPATH/vendor_backup" &> /dev/null
 }
 
 # Download dependencies for given package
@@ -312,16 +367,14 @@ checkoutCode() {
 # Code: Yes
 # Echo: No
 downloadDeps() {
-  local package
-
-  package="$1"
+  local package="$1"
 
   showm "Downloading dependencies… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "go" "get" "-d" "-v" "./..." ; then
-      error "Can't download package dependencies" $RED
+      error "Can't download package dependencies"
       return 1
     fi
 
@@ -340,16 +393,14 @@ downloadDeps() {
 # Code: No
 # Echo: No
 findUsedDepsManager() {
-  local package
+  local package="$1"
 
-  package="$1"
-
-  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "Gopkg.toml" | wc -l) != "0" ]] ; then
+  if [[ -e "$GOPATH/src/$package/Gopkg.lock" ]] ; then
     useDep=true
-  fi
-
-  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "glide.yaml" | wc -l) != "0" ]] ; then
+  elif [[ -e "$GOPATH/src/$package/glide.lock" ]] ; then
     useGlide=true
+  elif [[ -e "$GOPATH/src/$package/go.sum" ]]; then
+    useMod=true
   fi
 }
 
@@ -364,12 +415,16 @@ installGlide() {
 
   showm "Installing latest version of glide… " $BOLD
 
+  mv "$GOPATH/src" "$GOPATH/src_backup"
+  mkdir "$GOPATH/src"
+
   if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
-    error "Can't install glide" $RED
+    error "Can't install glide"
     return 1
   fi
 
-  rm -rf "$GOPATH/src/github.com/Masterminds/glide/" &>/dev/null
+  rm -rf "$GOPATH/src"
+  mv "$GOPATH/src_backup" "$GOPATH/src"
 
   return 0
 }
@@ -382,16 +437,14 @@ installGlide() {
 # Code: Yes
 # Echo: No
 getDepsByGlide() {
-  local package
-
-  package="$1"
+  local package="$1"
 
   showm "Downloading dependencies with glide… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "glide" "install" ; then
-      error "Can't download package dependencies" $RED
+      error "Can't download package dependencies"
       return 1
     fi
 
@@ -413,12 +466,16 @@ installDep() {
 
   showm "Installing latest version of dep… " $BOLD
 
+  mv "$GOPATH/src" "$GOPATH/src_backup"
+  mkdir "$GOPATH/src"
+
   if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
-    error "Can't install dep" $RED
+    error "Can't install dep"
     return 1
   fi
 
-  rm -rf "$GOPATH/src/github.com/golang/dep/" &>/dev/null
+  rm -rf "$GOPATH/src"
+  mv "$GOPATH/src_backup" "$GOPATH/src"
 
   return 0
 }
@@ -431,16 +488,42 @@ installDep() {
 # Code: Yes
 # Echo: No
 getDepsByDep() {
-  local package
-
-  package="$1"
+  local package="$1"
 
   showm "Downloading dependencies with dep… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "dep" "ensure" "-v" ; then
-      error "Can't download package dependencies" $RED
+      error "Can't download package dependencies"
+      return 1
+    fi
+
+  popd &> /dev/null || printCDErrorAndExit
+
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+
+  return 0
+}
+
+# Download dependencies for given package using glide
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: Yes
+# Echo: No
+getDepsByMod() {
+  local package="$1"
+
+  showm "Downloading dependencies with go mod… " $BOLD
+
+  export GO111MODULE=on
+
+  pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
+
+    if ! execCmd "go" "mod" "download" ; then
+      error "Can't download package dependencies"
       return 1
     fi
 
@@ -459,10 +542,10 @@ getDepsByDep() {
 # Code: No
 # Echo: No
 saveLatestCommitsHash() {
-  local dir output git_dir repo_dir head_hash
+  local dir="$1"
+  local output="$2"
 
-  dir="$1"
-  output="$2"
+  local git_dir repo_dir head_hash
 
   pushd "$dir" &> /dev/null || printCDErrorAndExit
 
@@ -524,9 +607,9 @@ cleanPackDir() {
 # Code: Yes
 # Echo: No
 packSources() {
-  local output arch_name arch_ext
+  local output="$1"
 
-  output="$1"
+  local arch_name arch_ext
 
   arch_name=$(getArchName "$output")
   arch_ext=$(getArchExt "$output")
@@ -537,22 +620,22 @@ packSources() {
 
     if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        error "Can't pack sources" $RED
+        error "Can't pack sources"
         return 1
       fi
     elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
       if ! execCmd "tar" "cjfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        error "Can't pack sources" $RED
+        error "Can't pack sources"
         return 1
       fi
     elif [[ "$arch_ext" == "tar.xz" || "$arch_ext" == "txz" ]] ; then
       if ! execCmd "tar" "cfJ" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        error "Can't pack sources" $RED
+        error "Can't pack sources"
         return 1
       fi
     else
       show "ERROR\n" $RED
-      error "Unknown archive type" $RED
+      error "Unknown archive type"
       return 1
     fi
 
@@ -568,9 +651,9 @@ packSources() {
 # Code: No
 # Echo: File name (String)
 getOutputName() {
-  local path base
+  local path="$1"
 
-  path="$1"
+  local base
 
   if [[ -z "$version" && -n "$tag" ]] ; then
     version="${tag#v}"
@@ -764,8 +847,16 @@ printCDErrorAndExit() {
 cleanAndExit() {
   local code="${1:-$EC_OK}"
 
+  if [[ -n "$useMod" ]] ; then
+    if ! GO111MODULE=on go clean -modcache ; then
+      error "Can't clean modules data"
+    fi
+  fi
+
   if [[ -e "$tmp_dir" ]] ; then
-    rm -rf "$tmp_dir"
+    if ! rm -rf "$tmp_dir" &> /dev/null ; then
+      error "Can't clean and remove temp directory $tmp_dir"
+    fi
   fi
 
   exit "$code"
@@ -851,7 +942,7 @@ showo() {
 # Code: No
 # Echo: No
 error() {
-  show "$@" 1>&2
+  show "$@" $RED 1>&2
 }
 
 # Show usage info
@@ -866,15 +957,16 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  showo "--output, -o"    "Output file name" "filename"
-  showo "--version, -v"   "Package version" "version"
-  showo "--revision, -r"  "Target revision" "revision"
-  showo "--branch, -b"    "Target branch" "branch"
-  showo "--tag, -t"       "Target tag" "tag"
-  showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "path"
-  showo "--verbose, -V"   "Verbose output"
-  showo "--no-color, -nc" "Disable colors in output"
-  showo "--help, -h"      "Show this help message"
+  showo "--output, -o"           "Output file name" "filename"
+  showo "--version, -v"          "Package version" "version"
+  showo "--revision, -r"         "Target revision" "revision"
+  showo "--branch, -b"           "Target branch" "branch"
+  showo "--tag, -t"              "Target tag" "tag"
+  showo "--preserve-vendor, -pv" "Preserve old vendor data ${CL_DARK}(unsafe, use with caution)${CL_NORM}"
+  showo "--tmp, -T"              "Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}" "path"
+  showo "--verbose, -V"          "Verbose output"
+  showo "--no-color, -nc"        "Disable colors in output"
+  showo "--help, -h"             "Show this help message"
   show ""
   show "Examples" $BOLD
   show ""
@@ -900,11 +992,11 @@ usage() {
 # Code: No
 # Echo: No
 showArgWarn() {
-  error "Unknown argument $1" $RED
+  error "Unknown argument $1"
   exit 1
 }
 
-## ARGUMENTS PARSING 3 #################################################################
+## ARGUMENTS PARSING 4 #################################################################
 
 [[ $# -eq 0 ]] && main && exit $?
 
@@ -1006,6 +1098,6 @@ done
 unset arg argn argm argk
 
 # shellcheck disable=SC2015,SC2086
-[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
+[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1}
 
 ########################################################################################

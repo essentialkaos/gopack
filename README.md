@@ -1,13 +1,15 @@
 <p align="center"><a href="#readme"><img src="https://gh.kaos.st/gopack.svg"/></a></p>
 
-<p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
-
 <p align="center">
   <a href="https://travis-ci.org/essentialkaos/gopack"><img src="https://travis-ci.org/essentialkaos/gopack.svg"></a>
   <a href="https://essentialkaos.com/ekol"><img src="https://gh.kaos.st/ekol.svg"></a>
 </p>
 
-`gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies (through `glide`, `dep` or `go get`) and packs them into an archive.
+<p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
+
+<br/>
+
+`gopack` is a simple tool for packing Go package sources. This utility downloads package sources with all dependencies (through `glide`, `dep`, `go mod` or `go get`) and packs them into an archive.
 
 `gopack-build` is a simple tool for building binaries from sources archive.
 
@@ -15,25 +17,25 @@
 
 #### `gopack`
 
-[![demo](https://gh.kaos.st/gopack-183.svg)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-1100.gif)](#usage-demo)
 
 #### `gopack-build`
 
-[![demo](https://gh.kaos.st/gopack-build-113.svg)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-build-120.gif)](#usage-demo)
 
 ### Installation
 
 #### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
 
 ```
-[sudo] yum install -y https://yum.kaos.st/6/release/x86_64/kaos-repo-9.1-0.el6.noarch.rpm
+[sudo] yum install -y https://yum.kaos.st/kaos-repo-latest.el6.noarch.rpm
 [sudo] yum install gopack gopack-build
 ```
 
 #### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
 
 ```
-[sudo] yum install -y https://yum.kaos.st/7/release/x86_64/kaos-repo-9.1-0.el7.noarch.rpm
+[sudo] yum install -y https://yum.kaos.st/kaos-repo-latest.el7.noarch.rpm
 [sudo] yum install gopack gopack-build
 ```
 
@@ -67,6 +69,7 @@ Options
   --revision, -r revision     Target revision
   --branch, -b branch         Target branch
   --tag, -t tag               Target tag
+  --preserve-vendor, -pv      Preserve old vendor data (unsafe, use with caution)
   --tmp, -T path              Path to temporary directory (/tmp by default)
   --verbose, -V               Verbose output
   --no-color, -nc             Disable colors in output
