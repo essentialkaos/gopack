@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1117,SC2034,SC2154,SC2181
+# shellcheck disable=SC1117,SC2034,SC2128,SC2154,SC2178
 
 ########################################################################################
 
 APP="GoPack Build"
-VER="1.1.3"
+VER="1.1.4"
 
 ########################################################################################
 
@@ -89,39 +89,39 @@ main() {
 # Echo: No
 prepare() {
   if [[ -z "$tmp" ]] ; then
-    error "Path to temporary directory can't be empty" $RED
+    error "Path to temporary directory can't be empty"
     exit $EC_ERROR
   fi
 
   if [[ ! -d "$tmp" ]] ; then
-    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist" $RED
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist"
     exit $EC_ERROR
   fi
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
-    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable" $RED
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable"
     exit $EC_ERROR
   fi
 
   if [[ -n "$output" ]] ; then
     if [[ ! -d "$output" ]] ; then
-      error "Output directory ${CL_BL_RED}${output}${CL_RED} doesn't exist" $RED
+      error "Output directory ${CL_BL_RED}${output}${CL_RED} doesn't exist"
       exit $EC_ERROR
     fi
 
     if [[ ! -w "$output" || ! -x "$output" ]] ; then
-      error "Output directory ${CL_BL_RED}${output}${CL_RED} must be writable and executable" $RED
+      error "Output directory ${CL_BL_RED}${output}${CL_RED} must be writable and executable"
       exit $EC_ERROR
     fi
   fi
 
   if ! isAppInstalled "go" ; then
-    error "This utility require go. Install it first." $RED
+    error "This utility require go. Install it first."
     exit $EC_ERROR
   fi
 
   if ! isAppInstalled "curl" ; then
-    error "This utility require curl. Install it first." $RED
+    error "This utility require curl. Install it first."
     exit $EC_ERROR
   fi
 }
@@ -167,7 +167,7 @@ downloadSources() {
   local url="$1"
 
   if ! isAccessibleUrl "$url" ; then
-    error "Can't download sources - server return error code" $RED
+    error "Can't download sources - server return error code"
     cleanAndExit $EC_ERROR
   fi
 
@@ -204,7 +204,7 @@ buildBinaries() {
 
   if [[ -z "$binaries" ]] ; then
     show ""
-    error "Can't find any binaries for build" $YELLOW
+    error "Can't find any binaries for build"
     cleanAndExit $EC_ERROR
   fi
 
@@ -226,7 +226,7 @@ buildBinaries() {
       show "✖ \n" $RED
       cat $build_log
       show ""
-      error "Can't build binary" $RED
+      error "Can't build binary"
       cleanAndExit
     fi
 
@@ -285,7 +285,7 @@ unpackSources() {
 
     if [[ $? -ne 0 ]] ; then
       show "ERROR\n" $RED
-      error "Can't unpack sources archive" $RED
+      error "Can't unpack sources archive"
       has_errors=true
     fi
   elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
@@ -293,12 +293,12 @@ unpackSources() {
 
     if [[ $? -ne 0 ]] ; then
       show "ERROR\n" $RED
-      error "Can't unpack sources archive" $RED
+      error "Can't unpack sources archive"
       has_errors=true
     fi
   else
     show "ERROR\n" $RED
-    error "Unknown archive type" $RED
+    error "Unknown archive type"
     has_errors=true
   fi
 
@@ -521,7 +521,7 @@ showo() {
 # Code: No
 # Echo: No
 error() {
-  show "$@" 1>&2
+  show "$@" $RED 1>&2
 }
 
 # Show usage info
@@ -571,11 +571,11 @@ about() {
 # Code: No
 # Echo: No
 showArgWarn() {
-  error "Unknown argument $1" $RED
+  error "Unknown argument $1"
   exit 1
 }
 
-## ARGUMENTS PARSING 3 #################################################################
+## ARGUMENTS PARSING 4 #################################################################
 
 [[ $# -eq 0 ]] && main && exit $?
 
@@ -677,6 +677,6 @@ done
 unset arg argn argm argk
 
 # shellcheck disable=SC2015,SC2086
-[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
+[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1}
 
 ########################################################################################
