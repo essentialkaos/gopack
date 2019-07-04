@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.9.0"
+VER="1.10.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ########################################################################################
@@ -364,12 +364,16 @@ installGlide() {
 
   showm "Installing latest version of glide… " $BOLD
 
+  mv "$GOPATH/src" "$GOPATH/src_backup"
+  mkdir "$GOPATH/src"
+
   if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
     error "Can't install glide" $RED
     return 1
   fi
 
-  rm -rf "$GOPATH/src/github.com/Masterminds/glide/" &>/dev/null
+  rm -rf "$GOPATH/src"
+  mv "$GOPATH/src_backup" "$GOPATH/src"
 
   return 0
 }
@@ -413,12 +417,16 @@ installDep() {
 
   showm "Installing latest version of dep… " $BOLD
 
+  mv "$GOPATH/src" "$GOPATH/src_backup"
+  mkdir "$GOPATH/src"
+
   if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
     error "Can't install dep" $RED
     return 1
   fi
 
-  rm -rf "$GOPATH/src/github.com/golang/dep/" &>/dev/null
+  rm -rf "$GOPATH/src"
+  mv "$GOPATH/src_backup" "$GOPATH/src"
 
   return 0
 }
