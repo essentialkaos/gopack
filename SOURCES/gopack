@@ -353,6 +353,7 @@ restoreVendorData() {
     mkdir "$GOPATH/src/$package/vendor"
   fi
 
+  # shellcheck disable=SC2216
   yes | cp -rf "$GOPATH/vendor_backup"/* "$GOPATH/src/$package/vendor/" &> /dev/null
 
   rm -rf "$GOPATH/vendor_backup" &> /dev/null
