@@ -71,6 +71,10 @@ useGlide=""
 # Dep usage flag
 useDep=""
 
+# -
+# Go modules usage flag
+useMod=""
+
 ########################################################################################
 
 # Main function
@@ -101,32 +105,32 @@ main() {
 # Echo: No
 prepare() {
   if [[ -z "$tmp" ]] ; then
-    error "Path to temporary directory can't be empty" $RED
+    error "Path to temporary directory can't be empty"
     exit $EC_ERROR
   fi
 
   if [[ ! -d "$tmp" ]] ; then
-    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist" $RED
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist"
     exit $EC_ERROR
   fi
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
-    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable" $RED
+    error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable"
     exit $EC_ERROR
   fi
 
   if ! isAppInstalled "go" ; then
-    error "This utility require go. Install it first." $RED
+    error "This utility require go. Install it first."
     exit $EC_ERROR
   fi
 
   if ! isAppInstalled "curl" ; then
-    error "This utility require curl. Install it first." $RED
+    error "This utility require curl. Install it first."
     exit $EC_ERROR
   fi
 
   if [[ -n "$output" && -z $(getArchExt "$output") ]] ; then
-    error "Unsupported output format" $RED
+    error "Unsupported output format"
     exit $EC_ERROR
   fi
 }
@@ -176,6 +180,10 @@ process() {
     fi
 
     if ! getDepsByDep "$package" ; then
+      cleanAndExit $EC_ERROR
+    fi
+  elif [[ -n "$useMod" ]] ; then
+    if ! getDepsByMod "$package" ; then
       cleanAndExit $EC_ERROR
     fi
   else
@@ -259,14 +267,14 @@ checkoutCode() {
 
   if ! isHTTPStatusOk "$git_path" ; then
     show "ERROR" $RED
-    error "Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible" $RED
+    error "Repository ${CL_BL_RED}${git_path}${CL_RED} is not accessible"
     return 1
   fi
 
   mkdir -p "$GOPATH/src/$package"
 
   if ! execCmd "git" "clone" "$git_path" "$GOPATH/src/$package/" ; then
-    error "Error while cloning repository ${CL_BL_RED}${git_path}" $RED
+    error "Error while cloning repository ${CL_BL_RED}${git_path}"
     return 1
   fi
 
@@ -276,7 +284,7 @@ checkoutCode() {
       showm "Switching HEAD to revision $revision… " $BOLD
 
       if ! execCmd "git" "checkout" "$revision" ; then
-        error "Can't checkout revision ${CL_BL_RED}${revision}" $RED
+        error "Can't checkout revision ${CL_BL_RED}${revision}"
         return 1
       fi
     fi
@@ -285,7 +293,7 @@ checkoutCode() {
       showm "Switching HEAD to branch $branch… " $BOLD
 
       if ! execCmd "git" "checkout" "$branch" ; then
-        error "Can't checkout branch ${CL_BL_RED}${branch}" $RED
+        error "Can't checkout branch ${CL_BL_RED}${branch}"
         return 1
       fi
     fi
@@ -294,7 +302,7 @@ checkoutCode() {
       showm "Switching HEAD to tag $tag… " $BOLD
 
       if ! execCmd "git" "checkout" "$tag" ; then
-        error "Can't checkout tag ${CL_BL_RED}${tag}" $RED
+        error "Can't checkout tag ${CL_BL_RED}${tag}"
         return 1
       fi
     fi
@@ -321,7 +329,7 @@ downloadDeps() {
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "go" "get" "-d" "-v" "./..." ; then
-      error "Can't download package dependencies" $RED
+      error "Can't download package dependencies"
       return 1
     fi
 
@@ -344,12 +352,12 @@ findUsedDepsManager() {
 
   package="$1"
 
-  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "Gopkg.toml" | wc -l) != "0" ]] ; then
+  if [[ -e "$GOPATH/src/$package/Gopkg.lock" ]] ; then
     useDep=true
-  fi
-
-  if [[ $(find "$GOPATH/src/$package" -maxdepth 1 -name "glide.yaml" | wc -l) != "0" ]] ; then
+  elif [[ -e "$GOPATH/src/$package/glide.lock" ]] ; then
     useGlide=true
+  elif [[ -e "$GOPATH/src/$package/go.sum" ]]; then
+    useMod=true
   fi
 }
 
@@ -368,7 +376,7 @@ installGlide() {
   mkdir "$GOPATH/src"
 
   if ! execCmd "go" "get" "-v" "github.com/Masterminds/glide" ; then
-    error "Can't install glide" $RED
+    error "Can't install glide"
     return 1
   fi
 
@@ -386,16 +394,14 @@ installGlide() {
 # Code: Yes
 # Echo: No
 getDepsByGlide() {
-  local package
-
-  package="$1"
+  local package="$1"
 
   showm "Downloading dependencies with glide… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "glide" "install" ; then
-      error "Can't download package dependencies" $RED
+      error "Can't download package dependencies"
       return 1
     fi
 
@@ -421,7 +427,7 @@ installDep() {
   mkdir "$GOPATH/src"
 
   if ! execCmd "go" "get" "-v" "github.com/golang/dep/..." ; then
-    error "Can't install dep" $RED
+    error "Can't install dep"
     return 1
   fi
 
@@ -439,16 +445,42 @@ installDep() {
 # Code: Yes
 # Echo: No
 getDepsByDep() {
-  local package
-
-  package="$1"
+  local package="$1"
 
   showm "Downloading dependencies with dep… " $BOLD
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
     if ! execCmd "dep" "ensure" "-v" ; then
-      error "Can't download package dependencies" $RED
+      error "Can't download package dependencies"
+      return 1
+    fi
+
+  popd &> /dev/null || printCDErrorAndExit
+
+  saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+
+  return 0
+}
+
+# Download dependencies for given package using glide
+#
+# 1: Package name (String)
+# 2: Path to temporary directory with sources (String)
+#
+# Code: Yes
+# Echo: No
+getDepsByMod() {
+  local package="$1"
+
+  showm "Downloading dependencies with go mod… " $BOLD
+
+  export GO111MODULE=on
+
+  pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
+
+    if ! execCmd "go" "mod" "download" ; then
+      error "Can't download package dependencies"
       return 1
     fi
 
@@ -545,22 +577,22 @@ packSources() {
 
     if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
       if ! execCmd "tar" "czfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        error "Can't pack sources" $RED
+        error "Can't pack sources"
         return 1
       fi
     elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
       if ! execCmd "tar" "cjfv" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        error "Can't pack sources" $RED
+        error "Can't pack sources"
         return 1
       fi
     elif [[ "$arch_ext" == "tar.xz" || "$arch_ext" == "txz" ]] ; then
       if ! execCmd "tar" "cfJ" "${arch_name}.${arch_ext}" "$arch_name" ; then
-        error "Can't pack sources" $RED
+        error "Can't pack sources"
         return 1
       fi
     else
       show "ERROR\n" $RED
-      error "Unknown archive type" $RED
+      error "Unknown archive type"
       return 1
     fi
 
@@ -772,8 +804,16 @@ printCDErrorAndExit() {
 cleanAndExit() {
   local code="${1:-$EC_OK}"
 
+  if [[ -n "$useMod" ]] ; then
+    if ! GO111MODULE=on go clean -modcache ; then
+      error "Can't clean modules data"
+    fi
+  fi
+
   if [[ -e "$tmp_dir" ]] ; then
-    rm -rf "$tmp_dir"
+    if ! rm -rf "$tmp_dir" &> /dev/null ; then
+      error "Can't clean and remove temp directory $tmp_dir"
+    fi
   fi
 
   exit "$code"
@@ -859,7 +899,7 @@ showo() {
 # Code: No
 # Echo: No
 error() {
-  show "$@" 1>&2
+  show "$@" $RED 1>&2
 }
 
 # Show usage info
@@ -908,7 +948,7 @@ usage() {
 # Code: No
 # Echo: No
 showArgWarn() {
-  error "Unknown argument $1" $RED
+  error "Unknown argument $1"
   exit 1
 }
 
