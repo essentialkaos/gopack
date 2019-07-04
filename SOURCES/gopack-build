@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack Build"
-VER="1.1.4"
+VER="1.2.0"
 
 ########################################################################################
 
@@ -46,7 +46,7 @@ TMP_TEMPLATE="gopack-build-XXXXXXXX"
 SUPPORTED_ARGS="tmp output !no_colors !version !help !usage"
 SHORT_ARGS="T:tmp o:output nc:!no_colors v:!version h:!help"
 
-SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz"
+SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
 
 EC_OK=0
 EC_ERROR=1
@@ -281,19 +281,27 @@ unpackSources() {
   pushd $tmp_dir &> /dev/null || cleanAndExit 1
 
   if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
-    tar czf "$src_name"
+    tar xzf "$src_name"
 
     if [[ $? -ne 0 ]] ; then
       show "ERROR\n" $RED
-      error "Can't unpack sources archive"
+      error "Can't unpack Gzip archive"
       has_errors=true
     fi
   elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
-    tar jxf "$src_name"
+    tar xjf "$src_name"
 
     if [[ $? -ne 0 ]] ; then
       show "ERROR\n" $RED
-      error "Can't unpack sources archive"
+      error "Can't unpack Bzip2 archive"
+      has_errors=true
+    fi
+  elif [[ "$arch_ext" == "tar.xz" || "$arch_ext" == "txz" ]] ; then
+    tar xJf "$src_name"
+
+    if [[ $? -ne 0 ]] ; then
+      show "ERROR\n" $RED
+      error "Can't unpack XZ archive"
       has_errors=true
     fi
   else
@@ -535,7 +543,7 @@ usage() {
   show "Options" $BOLD
   show ""
   showo "--output, -o"    "Output directory" "dir"
-  showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "dir"
+  showo "--tmp, -T"       "Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}" "dir"
   showo "--no-color, -nc" "Disable colors in output" ""
   showo "--version, -v"   "Show information about version" ""
   showo "--help, -h"      "Show this help message" ""
