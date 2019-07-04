@@ -273,9 +273,26 @@ checkoutCode() {
 
   mkdir -p "$GOPATH/src/$package"
 
-  if ! execCmd "git" "clone" "$git_path" "$GOPATH/src/$package/" ; then
-    error "Error while cloning repository ${CL_BL_RED}${git_path}"
-    return 1
+  if [[ -n "$branch" ]] ; then
+    if ! execCmd "git" "clone" "--depth=1" "--branch=$branch" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path} (branch: $branch)"
+      return 1
+    fi
+  elif [[ -n "$tag" ]] ; then
+    if ! execCmd "git" "clone" "--depth=1" "--branch=$tag" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path} (tag: $tag)"
+      return 1
+    fi
+  elif [[ -n "$revision" ]]; then
+    if ! execCmd "git" "clone" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path} (rev: $revision)"
+      return 1
+    fi
+  else
+    if ! execCmd "git" "clone" "--depth=1" "$git_path" "$GOPATH/src/$package/" ; then
+      error "Error while cloning repository ${CL_BL_RED}${git_path}"
+      return 1
+    fi
   fi
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
@@ -284,25 +301,7 @@ checkoutCode() {
       showm "Switching HEAD to revision $revision… " $BOLD
 
       if ! execCmd "git" "checkout" "$revision" ; then
-        error "Can't checkout revision ${CL_BL_RED}${revision}"
-        return 1
-      fi
-    fi
-
-    if [[ -n "$branch" ]] ; then
-      showm "Switching HEAD to branch $branch… " $BOLD
-
-      if ! execCmd "git" "checkout" "$branch" ; then
-        error "Can't checkout branch ${CL_BL_RED}${branch}"
-        return 1
-      fi
-    fi
-
-    if [[ -n "$tag" ]] ; then
-      showm "Switching HEAD to tag $tag… " $BOLD
-
-      if ! execCmd "git" "checkout" "$tag" ; then
-        error "Can't checkout tag ${CL_BL_RED}${tag}"
+        error "Can't fetch revision ${CL_BL_RED}${revision}"
         return 1
       fi
     fi
