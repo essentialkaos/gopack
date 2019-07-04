@@ -48,9 +48,9 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
 
-SUPPORTED_ARGS="tmp output version revision tag branch !no_colors 
- !verbose !help !usage"
-SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch 
+SUPPORTED_ARGS="tmp output version revision tag branch !preserve_vendor 
+ !no_colors !verbose !help !usage"
+SHORT_ARGS="T:tmp o:output v:version r:revision t:tag b:branch pv:!preserve_vendor 
  nc:!no_colors V:!verbose h:!help"
 
 # Path to temporary dir (String)
@@ -166,6 +166,10 @@ process() {
 
   findUsedDepsManager "$package"
 
+  if [[ -n "$preserve_vendor" ]] ; then
+    saveVendorData "$package"
+  fi
+
   if [[ -n "$useGlide" ]] ; then
     if ! installGlide ; then
       cleanAndExit $EC_ERROR
@@ -190,6 +194,10 @@ process() {
     if ! downloadDeps "$package" ; then
       cleanAndExit $EC_ERROR
     fi
+  fi
+
+  if [[ -n "$preserve_vendor" ]] ; then
+    restoreVendorData "$package"
   fi
 
   if [[ -z "$output" ]] ; then
@@ -311,6 +319,45 @@ checkoutCode() {
   return 0
 }
 
+# Backup vendor data
+#
+# 1: Package name (String)
+#
+# Code: No
+# Echo: No
+saveVendorData() {
+  local package="$1"
+
+  if [[ ! -e "$GOPATH/src/$package/vendor" ]] ; then
+    return
+  fi
+
+  cp -rlp "$GOPATH/src/$package/vendor" "$GOPATH/vendor_backup"
+  rm -rf "$GOPATH/src/$package/vendor/" &> /dev/null
+}
+
+# Restore vendor data
+#
+# 1: Package name (String)
+#
+# Code: No
+# Echo: No
+restoreVendorData() {
+  local package="$1"
+
+  if [[ ! -e "$GOPATH/vendor_backup" ]] ; then
+    return
+  fi
+
+  if [[ ! -e "$GOPATH/src/$package/vendor" ]] ; then
+    mkdir "$GOPATH/src/$package/vendor"
+  fi
+
+  yes | cp -rf "$GOPATH/vendor_backup"/* "$GOPATH/src/$package/vendor/" &> /dev/null
+
+  rm -rf "$GOPATH/vendor_backup" &> /dev/null
+}
+
 # Download dependencies for given package
 #
 # 1: Package name (String)
@@ -319,9 +366,7 @@ checkoutCode() {
 # Code: Yes
 # Echo: No
 downloadDeps() {
-  local package
-
-  package="$1"
+  local package="$1"
 
   showm "Downloading dependencies… " $BOLD
 
@@ -347,9 +392,7 @@ downloadDeps() {
 # Code: No
 # Echo: No
 findUsedDepsManager() {
-  local package
-
-  package="$1"
+  local package="$1"
 
   if [[ -e "$GOPATH/src/$package/Gopkg.lock" ]] ; then
     useDep=true
@@ -498,10 +541,10 @@ getDepsByMod() {
 # Code: No
 # Echo: No
 saveLatestCommitsHash() {
-  local dir output git_dir repo_dir head_hash
+  local dir="$1"
+  local output="$2"
 
-  dir="$1"
-  output="$2"
+  local git_dir repo_dir head_hash
 
   pushd "$dir" &> /dev/null || printCDErrorAndExit
 
@@ -563,9 +606,9 @@ cleanPackDir() {
 # Code: Yes
 # Echo: No
 packSources() {
-  local output arch_name arch_ext
+  local output="$1"
 
-  output="$1"
+  local arch_name arch_ext
 
   arch_name=$(getArchName "$output")
   arch_ext=$(getArchExt "$output")
@@ -607,9 +650,9 @@ packSources() {
 # Code: No
 # Echo: File name (String)
 getOutputName() {
-  local path base
+  local path="$1"
 
-  path="$1"
+  local base
 
   if [[ -z "$version" && -n "$tag" ]] ; then
     version="${tag#v}"
@@ -913,15 +956,16 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  showo "--output, -o"    "Output file name" "filename"
-  showo "--version, -v"   "Package version" "version"
-  showo "--revision, -r"  "Target revision" "revision"
-  showo "--branch, -b"    "Target branch" "branch"
-  showo "--tag, -t"       "Target tag" "tag"
-  showo "--tmp, -T"       "Path to temporary directory (/tmp by default)" "path"
-  showo "--verbose, -V"   "Verbose output"
-  showo "--no-color, -nc" "Disable colors in output"
-  showo "--help, -h"      "Show this help message"
+  showo "--output, -o"           "Output file name" "filename"
+  showo "--version, -v"          "Package version" "version"
+  showo "--revision, -r"         "Target revision" "revision"
+  showo "--branch, -b"           "Target branch" "branch"
+  showo "--tag, -t"              "Target tag" "tag"
+  showo "--preserve-vendor, -pv" "Preserve old vendor data ${CL_DARK}(unsafe, use with caution)${CL_NORM}"
+  showo "--tmp, -T"              "Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}" "path"
+  showo "--verbose, -V"          "Verbose output"
+  showo "--no-color, -nc"        "Disable colors in output"
+  showo "--help, -h"             "Show this help message"
   show ""
   show "Examples" $BOLD
   show ""
