@@ -4,7 +4,7 @@
 ########################################################################################
 
 APP="GoPack"
-VER="1.10.0"
+VER="1.10.1"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ########################################################################################
@@ -142,7 +142,7 @@ prepare() {
 # Code: No
 # Echo: No
 process() {
-  local package arch_name output_file output_size
+  local package arch_name output_file output_size pretty_output
 
   package="$1"
 
@@ -223,7 +223,9 @@ process() {
   # shellcheck disable=SC2012
   output_size=$(ls -lah "$output" | awk -F " " '{print $5}')
 
-  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${output}${CL_DARK} (${output_size})${CL_NORM}"
+  pretty_output=$(echo "$output" | sed 's:^\.\/::')
+
+  show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${pretty_output}${CL_DARK} (${output_size})${CL_NORM}"
 
   cleanAndExit
 }

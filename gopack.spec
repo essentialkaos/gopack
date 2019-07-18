@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.10.0
+Version:         1.10.1
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Thu Jul 18 2019 Anton Novojilov <andy@essentialkaos.com> - 1.10.1-0
+- Minor UI improvement
+
 * Thu Jul 04 2019 Anton Novojilov <andy@essentialkaos.com> - 1.10.0-0
 - [gopack] Added a new way to remove useless source code after installing
   package managers
