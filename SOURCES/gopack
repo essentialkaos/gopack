@@ -223,6 +223,7 @@ process() {
   # shellcheck disable=SC2012
   output_size=$(ls -lah "$output" | awk -F " " '{print $5}')
 
+  # shellcheck disable=SC2001
   pretty_output=$(echo "$output" | sed 's:^\.\/::')
 
   show "${CL_GREEN}Sources packed and saved as ${CL_BL_GREEN}${pretty_output}${CL_DARK} (${output_size})${CL_NORM}"
