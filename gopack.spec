@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.10.2
+Version:         1.10.3
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         EKOL
@@ -27,7 +27,7 @@ Simple tool for packing golang packages sources with all dependencies.
 %package build
 
 Summary:         Tool for building binaries from sources archive created by gopack
-Version:         1.2.1
+Version:         1.2.2
 Release:         0%{?dist}
 Group:           Development/Tools
 
@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Wed Dec 04 2019 Anton Novojilov <andy@essentialkaos.com> - 1.10.3-0
+- Removed handler for script errors
+
 * Sat Nov 30 2019 Anton Novojilov <andy@essentialkaos.com> - 1.10.2-0
 - Added handling of SCRIPT_DEBUG environment variable for enabling debug mode
 - Added handler for script errors
