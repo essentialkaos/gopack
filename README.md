@@ -1,7 +1,7 @@
 <p align="center"><a href="#readme"><img src="https://gh.kaos.st/gopack.svg"/></a></p>
 
 <p align="center">
-  <a href="https://travis-ci.org/essentialkaos/gopack"><img src="https://travis-ci.org/essentialkaos/gopack.svg"></a>
+  <a href="https://travis-ci.com/essentialkaos/gopack"><img src="https://travis-ci.com/essentialkaos/gopack.svg"></a>
   <a href="https://essentialkaos.com/ekol"><img src="https://gh.kaos.st/ekol.svg"></a>
 </p>
 
@@ -116,8 +116,8 @@ Examples
 
 | Branch | Status |
 |--------|--------|
-| `master` | [![Build Status](https://travis-ci.org/essentialkaos/gopack.svg?branch=master)](https://travis-ci.org/essentialkaos/gopack) |
-| `develop` | [![Build Status](https://travis-ci.org/essentialkaos/gopack.svg?branch=develop)](https://travis-ci.org/essentialkaos/gopack) |
+| `master` | [![Build Status](https://travis-ci.com/essentialkaos/gopack.svg?branch=master)](https://travis-ci.com/essentialkaos/gopack) |
+| `develop` | [![Build Status](https://travis-ci.com/essentialkaos/gopack.svg?branch=develop)](https://travis-ci.com/essentialkaos/gopack) |
 
 ### License
 
