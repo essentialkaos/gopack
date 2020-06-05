@@ -10,7 +10,7 @@ fi
 ########################################################################################
 
 APP="GoPack Build"
-VER="1.2.2"
+VER="1.2.3"
 
 ########################################################################################
 
@@ -284,7 +284,7 @@ unpackSources() {
 
   showm "Unpacking sources… "
 
-  pushd $tmp_dir &> /dev/null || cleanAndExit 1
+  pushd "$tmp_dir" &> /dev/null || cleanAndExit 1
 
   if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
     tar xzf "$src_name"
