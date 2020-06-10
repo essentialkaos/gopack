@@ -25,27 +25,20 @@
 
 ### Installation
 
-#### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
+#### From ESSENTIAL KAOS Public repository
 
 ```
-[sudo] yum install -y https://yum.kaos.st/kaos-repo-latest.el6.noarch.rpm
-[sudo] yum install gopack gopack-build
-```
-
-#### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
-
-```
-[sudo] yum install -y https://yum.kaos.st/kaos-repo-latest.el7.noarch.rpm
-[sudo] yum install gopack gopack-build
+sudo yum install -y https://yum.kaos.st/get/$(uname -r).rpm
+sudo yum install gopack gopack-build
 ```
 
 #### From GitHub repository
 
 ```bash
-wget https://kaos.sh/gopack/SOURCES/gopack
-wget https://kaos.sh/gopack/SOURCES/gopack-build
+curl -o gopack https://kaos.sh/gopack/SOURCES/gopack
+curl -o gopack-build https://kaos.sh/gopack/SOURCES/gopack-build
 chmod +x gopack gopack-build
-[sudo] mv gopack gopack-build /usr/bin/
+sudo mv gopack gopack-build /usr/bin/
 ```
 
 Also, you can use the latest version of utilities without installation:
