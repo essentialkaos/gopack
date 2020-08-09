@@ -990,7 +990,7 @@ usage() {
   show "  as ssllabs-client-1.0.1.tgz" $DARK
   show ""
   show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
-  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol>" $DARK
+  show "Apache License, Version 2.0 <https://www.apache.org/licenses/LICENSE-2.0>" $DARK
   show ""
 }
 
