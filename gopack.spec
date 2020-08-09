@@ -5,7 +5,7 @@ Name:            gopack
 Version:         1.10.3
 Release:         1%{?dist}
 Group:           Development/Tools
-License:         EKOL
+License:         Apache License, Version 2.0
 URL:             https://github.com/essentialkaos/gopack
 
 Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
@@ -52,12 +52,12 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE.EN LICENSE.RU
+%doc LICENSE
 %{_bindir}/%{name}
 
 %files build
 %defattr(-,root,root,-)
-%doc LICENSE.EN LICENSE.RU
+%doc LICENSE
 %{_bindir}/%{name}-build
 
 ################################################################################
