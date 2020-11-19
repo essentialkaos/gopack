@@ -6,14 +6,14 @@ Version:         1.10.3
 Release:         1%{?dist}
 Group:           Development/Tools
 License:         Apache License, Version 2.0
-URL:             https://github.com/essentialkaos/gopack
+URL:             https://kaos.sh/gopack
 
-Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
+Source0:         https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 
 BuildArch:       noarch
 BuildRoot:       %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:        golang git mercurial curl
+Requires:        golang git curl
 
 Provides:        %{name} = %{version}-%{release}
 
