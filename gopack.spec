@@ -2,7 +2,7 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.10.4
+Version:         1.11.0
 Release:         0%{?dist}
 Group:           Development/Tools
 License:         Apache License, Version 2.0
@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Sat Apr 03 2021 Anton Novojilov <andy@essentialkaos.com> - 1.11.0-0
+- [gopack] Added clone depth configuration option
+
 * Sat Apr 03 2021 Anton Novojilov <andy@essentialkaos.com> - 1.10.4-0
 - [gopack|gopack-build] Code refactoring
 - [gopack|gopack-build] Minor UI fixes

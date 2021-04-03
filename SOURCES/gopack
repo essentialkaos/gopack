@@ -10,7 +10,7 @@ fi
 ################################################################################
 
 APP="GoPack"
-VER="1.10.4"
+VER="1.11.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ################################################################################
@@ -54,10 +54,10 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
 
-SUPPORTED_OPTS="tmp output version revision tag branch !preserve_vendor 
+SUPPORTED_OPTS="tmp output version revision tag branch depth !preserve_vendor 
  !no_colors !verbose !help !usage"
-SHORT_OPTS="T:tmp o:output v:version r:revision t:tag b:branch pv:!preserve_vendor 
- nc:!no_colors V:!verbose h:!help"
+SHORT_OPTS="T:tmp o:output v:version r:revision t:tag b:branch d:depth 
+ pv:!preserve_vendor nc:!no_colors V:!verbose h:!help"
 
 # Path to temporary dir (String)
 tmp="/tmp"
@@ -293,12 +293,12 @@ checkoutCode() {
   mkdir -p "$GOPATH/src/$package"
 
   if [[ -n "$branch" ]] ; then
-    if ! execCmd "git" "clone" "--depth=1" "--branch=$branch" "$git_path" "$GOPATH/src/$package/" ; then
+    if ! execCmd "git" "clone" "--depth=${depth:-10}" "--branch=$branch" "$git_path" "$GOPATH/src/$package/" ; then
       error "Error while cloning repository ${CL_BL_RED}${git_path} (branch: $branch)"
       return 1
     fi
   elif [[ -n "$tag" ]] ; then
-    if ! execCmd "git" "clone" "--depth=1" "--branch=$tag" "$git_path" "$GOPATH/src/$package/" ; then
+    if ! execCmd "git" "clone" "--depth=${depth:-10}" "--branch=$tag" "$git_path" "$GOPATH/src/$package/" ; then
       error "Error while cloning repository ${CL_BL_RED}${git_path} (tag: $tag)"
       return 1
     fi
@@ -308,7 +308,7 @@ checkoutCode() {
       return 1
     fi
   else
-    if ! execCmd "git" "clone" "--depth=1" "$git_path" "$GOPATH/src/$package/" ; then
+    if ! execCmd "git" "clone" "--depth=${depth:-10}" "$git_path" "$GOPATH/src/$package/" ; then
       error "Error while cloning repository ${CL_BL_RED}${git_path}"
       return 1
     fi
@@ -973,6 +973,7 @@ usage() {
   showo "--revision, -r"         "Target revision" "revision"
   showo "--branch, -b"           "Target branch" "branch"
   showo "--tag, -t"              "Target tag" "tag"
+  showo "--depth, -d"            "Clone depth ${CL_DARK}(10 commits by default)${CL_NORM}" "num"
   showo "--preserve-vendor, -pv" "Preserve old vendor data ${CL_DARK}(unsafe, use with caution)${CL_NORM}"
   showo "--tmp, -T"              "Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}" "path"
   showo "--verbose, -V"          "Verbose output"
