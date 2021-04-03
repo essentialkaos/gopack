@@ -996,14 +996,14 @@ usage() {
   show ""
 }
 
-# Print message about unsupported argument
+# Prints message about unsupported option
 #
-# 1: Argument (String)
+# 1: Option name (String)
 #
 # Code: No
 # Echo: No
-showArgWarn() {
-  error "Unknown argument $1"
+showOptWarn() {
+  error "Unknown option $1"
   exit 1
 }
 
