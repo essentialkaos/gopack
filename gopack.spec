@@ -2,8 +2,8 @@
 
 Summary:         Tool for packing Go package sources
 Name:            gopack
-Version:         1.10.3
-Release:         1%{?dist}
+Version:         1.10.4
+Release:         0%{?dist}
 Group:           Development/Tools
 License:         Apache License, Version 2.0
 URL:             https://kaos.sh/gopack
@@ -27,7 +27,7 @@ Simple tool for packing golang packages sources with all dependencies.
 %package build
 
 Summary:         Tool for building binaries from sources archive created by gopack
-Version:         1.2.3
+Version:         1.2.4
 Release:         0%{?dist}
 Group:           Development/Tools
 
@@ -63,6 +63,10 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Sat Apr 03 2021 Anton Novojilov <andy@essentialkaos.com> - 1.10.4-0
+- [gopack|gopack-build] Code refactoring
+- [gopack|gopack-build] Minor UI fixes
+
 * Fri Jun 05 2020 Anton Novojilov <andy@essentialkaos.com> - 1.10.3-1
 - [gopack-build] Fixed problems reported by shellcheck
 
