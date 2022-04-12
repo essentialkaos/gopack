@@ -84,7 +84,6 @@ Examples
 
   gopack -S A1092511 -v 1.0.1 github.com/essentialkaos/ssllabs_client
   Pack sources for version 1.0.1, save result as ssllabs_client-1.0.1.tar.bz2 and create signature
-
 ```
 
 #### `gopack-build`
@@ -107,7 +106,6 @@ Examples
   gopack -o /home/user https://github.com/essentialkaos/yo/releases/download/v0.2.0/yo-0.2.0.tar.bz2
   Build binary from remote archive with sources and save result
   to directory /home/user
-
 ```
 
 ### Build Status
