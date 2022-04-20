@@ -1,7 +1,7 @@
 <p align="center"><a href="#readme"><img src="https://gh.kaos.st/gopack.svg"/></a></p>
 
 <p align="center">
-  <a href="https://github.com/essentialkaos/gopack/actions"><img src="https://github.com/essentialkaos/gopack/workflows/CI/badge.svg" alt="GitHub Actions Status" /></a>
+  <a href="https://kaos.sh/w/gopack/ci"><img src="https://kaos.sh/w/gopack/ci.svg" alt="GitHub Actions CI Status" /></a>
   <a href="#license"><img src="https://gh.kaos.st/apache2.svg"></a>
 </p>
 
@@ -59,9 +59,11 @@ Options
 
   --output, -o filename       Output file name
   --version, -v version       Package version
+  --sign, -S key              Sign result with GPG
   --revision, -r revision     Target revision
   --branch, -b branch         Target branch
   --tag, -t tag               Target tag
+  --depth, -d num             Clone depth (10 commits by default)
   --preserve-vendor, -pv      Preserve old vendor data (unsafe, use with caution)
   --tmp, -T path              Path to temporary directory (/tmp by default)
   --verbose, -V               Verbose output
@@ -80,6 +82,8 @@ Examples
   Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result 
   as ssllabs-client-1.0.1.tgz
 
+  gopack -S A1092511 -v 1.0.1 github.com/essentialkaos/ssllabs_client
+  Pack sources for version 1.0.1, save result as ssllabs_client-1.0.1.tar.bz2 and create signature
 ```
 
 #### `gopack-build`
@@ -102,15 +106,14 @@ Examples
   gopack -o /home/user https://github.com/essentialkaos/yo/releases/download/v0.2.0/yo-0.2.0.tar.bz2
   Build binary from remote archive with sources and save result
   to directory /home/user
-
 ```
 
 ### Build Status
 
 | Branch | Status |
 |--------|--------|
-| `master` | [![CI](https://github.com/essentialkaos/gopack/workflows/CI/badge.svg?branch=master)](https://github.com/essentialkaos/gopack/actions) |
-| `develop` | [![CI](https://github.com/essentialkaos/gopack/workflows/CI/badge.svg?branch=develop)](https://github.com/essentialkaos/gopack/actions) |
+| `master` | [![CI](https://kaos.sh/w/gopack/ci.svg?branch=master)](https://kaos.sh/w/gopack/ci?query=branch:master) |
+| `develop` | [![CI](https://kaos.sh/w/gopack/ci.svg?branch=develop)](https://kaos.sh/w/gopack/ci?query=branch:develop) |
 
 ### License
 

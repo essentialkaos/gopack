@@ -10,7 +10,7 @@ fi
 ################################################################################
 
 APP="GoPack"
-VER="1.12.0"
+VER="1.13.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ################################################################################
@@ -54,9 +54,9 @@ TMP_TEMPLATE="gopack-XXXXXXXX"
 
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
 
-SUPPORTED_OPTS="tmp output version revision tag branch depth !preserve_vendor 
- !no_colors !verbose !help !usage"
-SHORT_OPTS="T:tmp o:output v:version r:revision t:tag b:branch d:depth 
+SUPPORTED_OPTS="tmp output version revision tag branch depth sign 
+ !preserve_vendor !no_colors !verbose !help !usage"
+SHORT_OPTS="T:tmp o:output v:version r:revision t:tag b:branch d:depth S:sign
  pv:!preserve_vendor nc:!no_colors V:!verbose h:!help"
 
 # Path to temporary dir (String)
@@ -90,7 +90,7 @@ useMod=""
 # Code: No
 # Echo: No
 main() {
-  if [[ -n "$no_colors" ]] ; then
+  if [[ -n "$no_colors" || $(printenv NO_COLOR) != "" ]] ; then
     unset NORM BOLD UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
@@ -225,6 +225,10 @@ process() {
   cp "$GOPATH/$output_file" "$output"
 
   [[ -z "$verbose" ]] && show ""
+
+  if [[ -n "$sign" ]] ; then
+    signSources "$output"
+  fi
 
   # shellcheck disable=SC2012
   output_size=$(ls -lah "$output" | awk -F " " '{print $5}')
@@ -656,6 +660,25 @@ packSources() {
   return 0
 }
 
+# Sign file with sources
+#
+# 1: Path to file (String)
+#
+# Code: Yes
+# Echo: No
+signSources() {
+  if ! gpg --list-keys "$sign" &> /dev/null ; then
+    error "There is no GPG key \"$sign\""
+    return 1
+  fi
+
+  local sources="$1"
+
+  gpg --local-user "$sign" --armor --detach-sign --output "${sources}.asc" "$sources"
+
+  return $?
+}
+
 # Generate output file name
 #
 # 1: Path (String)
@@ -971,6 +994,7 @@ usage() {
   show ""
   showo "--output, -o"           "Output file name" "filename"
   showo "--version, -v"          "Package version" "version"
+  showo "--sign, -S"             "Sign result with GPG" "key"
   showo "--revision, -r"         "Target revision" "revision"
   showo "--branch, -b"           "Target branch" "branch"
   showo "--tag, -t"              "Target tag" "tag"
@@ -992,6 +1016,9 @@ usage() {
   show "  gopack -o ssllabs-client-1.0.1.tgz -t v1.0.1 github.com/essentialkaos/ssllabs_client"
   show "  Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result " $DARK
   show "  as ssllabs-client-1.0.1.tgz" $DARK
+  show ""
+  show "  gopack -S A1092511 -v 1.0.1 github.com/essentialkaos/ssllabs_client"
+  show "  Pack sources for version 1.0.1, save result as ssllabs_client-1.0.1.tar.bz2 and create signature" $DARK
   show ""
   show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
   show "Apache License, Version 2.0 <https://www.apache.org/licenses/LICENSE-2.0>" $DARK
