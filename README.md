@@ -48,6 +48,14 @@ bash <(curl -fsSL https://kaos.sh/gopack/SOURCES/gopack) # pass options here
 bash <(curl -fsSL https://kaos.sh/gopack/SOURCES/gopack-build) # pass options here
 ```
 
+#### Using Makefile and Git
+
+```bash
+git clone https://kaos.sh/gopack.git
+cd gopack
+sudo make install
+```
+
 ### Usage
 
 #### `gopack`
