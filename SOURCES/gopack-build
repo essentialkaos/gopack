@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1117,SC2034,SC2128,SC2154,SC2178,SC2181
 
 ################################################################################
 
@@ -10,7 +9,7 @@ fi
 ################################################################################
 
 APP="GoPack Build"
-VER="1.2.4"
+VER="1.2.5"
 DESC="Simple tool for building binaries from sources archive"
 
 ################################################################################
@@ -27,36 +26,53 @@ CYAN=36
 GREY=37
 DARK=90
 
-CL_NORM="\e[0m"
+# shellcheck disable=SC2034
+CL_NORM="\e[${NORM}m"
+# shellcheck disable=SC2034
 CL_BOLD="\e[0;${BOLD};49m"
+# shellcheck disable=SC2034
 CL_UNLN="\e[0;${UNLN};49m"
+# shellcheck disable=SC2034
 CL_RED="\e[0;${RED};49m"
+# shellcheck disable=SC2034
 CL_GREEN="\e[0;${GREEN};49m"
+# shellcheck disable=SC2034
 CL_YELLOW="\e[0;${YELLOW};49m"
+# shellcheck disable=SC2034
 CL_BLUE="\e[0;${BLUE};49m"
+# shellcheck disable=SC2034
 CL_MAG="\e[0;${MAG};49m"
+# shellcheck disable=SC2034
 CL_CYAN="\e[0;${CYAN};49m"
+# shellcheck disable=SC2034
 CL_GREY="\e[0;${GREY};49m"
+# shellcheck disable=SC2034
 CL_DARK="\e[0;${DARK};49m"
+# shellcheck disable=SC2034
 CL_BL_RED="\e[1;${RED};49m"
+# shellcheck disable=SC2034
 CL_BL_GREEN="\e[1;${GREEN};49m"
+# shellcheck disable=SC2034
 CL_BL_YELLOW="\e[1;${YELLOW};49m"
+# shellcheck disable=SC2034
 CL_BL_BLUE="\e[1;${BLUE};49m"
+# shellcheck disable=SC2034
 CL_BL_MAG="\e[1;${MAG};49m"
+# shellcheck disable=SC2034
 CL_BL_CYAN="\e[1;${CYAN};49m"
+# shellcheck disable=SC2034
 CL_BL_GREY="\e[1;${GREY};49m"
+
+################################################################################
+
+SUPPORTED_OPTS="tmp output !no_color !version !help !usage"
+SHORT_OPTS="T:tmp o:output nc:!no_color v:!version h:!help"
 
 ################################################################################
 
 TMP_TEMPLATE="gopack-build-XXXXXXXX"
 
-SUPPORTED_OPTS="tmp output !no_colors !version !help !usage"
-SHORT_OPTS="T:tmp o:output nc:!no_colors v:!version h:!help"
-
 SUPPORTED_ARCH_TYPES="tbz2 tar.bz2 tgz tar.gz tbz tar.bz tar.xz txz"
-
-EC_OK=0
-EC_ERROR=1
 
 ################################################################################
 
@@ -70,7 +86,7 @@ tmp_dir=""
 ################################################################################
 
 main() {
-  if [[ -n "$no_colors" ]] ; then
+  if [[ ! -t 1 || -n "$no_color" || -n "$NO_COLOR" ]] ; then
     unset NORM BOLD UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
@@ -78,12 +94,12 @@ main() {
 
   if [[ -n "$version" ]] ; then
     about
-    exit $EC_OK
+    exit 0
   fi
 
   if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
     usage
-    exit $EC_OK
+    exit 0
   fi
 
   prepare
@@ -97,39 +113,39 @@ main() {
 prepare() {
   if [[ -z "$tmp" ]] ; then
     error "Path to temporary directory can't be empty"
-    exit $EC_ERROR
+    exit 1
   fi
 
   if [[ ! -d "$tmp" ]] ; then
     error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} doesn't exist"
-    exit $EC_ERROR
+    exit 1
   fi
 
   if [[ ! -w "$tmp" || ! -r "$tmp" || ! -x "$tmp" ]] ; then
     error "Temporary directory ${CL_BL_RED}${tmp}${CL_RED} must be readable, writable and executable"
-    exit $EC_ERROR
+    exit 1
   fi
 
   if [[ -n "$output" ]] ; then
     if [[ ! -d "$output" ]] ; then
       error "Output directory ${CL_BL_RED}${output}${CL_RED} doesn't exist"
-      exit $EC_ERROR
+      exit 1
     fi
 
     if [[ ! -w "$output" || ! -x "$output" ]] ; then
       error "Output directory ${CL_BL_RED}${output}${CL_RED} must be writable and executable"
-      exit $EC_ERROR
+      exit 1
     fi
   fi
 
   if ! isAppInstalled "go" ; then
     error "This utility require go. Install it first."
-    exit $EC_ERROR
+    exit 1
   fi
 
   if ! isAppInstalled "curl" ; then
     error "This utility require curl. Install it first."
-    exit $EC_ERROR
+    exit 1
   fi
 }
 
@@ -152,7 +168,7 @@ process() {
   else
     if [[ ! -e "$src" ]] ; then
       error "File $src doesn't exist"
-      cleanAndExit $EC_ERROR
+      cleanAndExit 1
     fi
     
     cp "$src" "$tmp_dir/"
@@ -161,7 +177,7 @@ process() {
   unpackSources "$src_name"
   buildBinaries "$src_name"
 
-  cleanAndExit $EC_OK
+  cleanAndExit
 }
 
 # Download remote source
@@ -175,7 +191,7 @@ downloadSources() {
 
   if ! isAccessibleUrl "$url" ; then
     error "Can't download sources - server return error code"
-    cleanAndExit $EC_ERROR
+    cleanAndExit 1
   fi
 
   local file_name
@@ -183,10 +199,8 @@ downloadSources() {
 
   show "Dowloading sources…"
 
-  curl -L --max-redirs 10 --progress-bar "$url" -o "$tmp_dir/$file_name"
-
-  if [[ $? -ne 0 ]] ; then
-    cleanAndExit $EC_ERROR
+  if ! curl -L --max-redirs 10 --progress-bar "$url" -o "$tmp_dir/$file_name" ; then
+    cleanAndExit 1
   fi
 }
 
@@ -212,7 +226,7 @@ buildBinaries() {
   if [[ -z "$binaries" ]] ; then
     show ""
     error "Can't find any binaries for build"
-    cleanAndExit $EC_ERROR
+    cleanAndExit 1
   fi
 
   if [[ -z "$output" ]] ; then
@@ -227,14 +241,12 @@ buildBinaries() {
 
     showm " ${CL_DARK}•${CL_NORM} $binary_name "
 
-    go build -o "$output/$binary_name" "$binary" &> $build_log
-
-    if [[ $? -ne 0 ]] ; then
+    if ! go build -o "$output/$binary_name" "$binary" &> "$build_log" ; then
       show "✖ \n" $RED
-      cat $build_log
+      cat "$build_log"
       show ""
       error "Can't build binary"
-      cleanAndExit
+      cleanAndExit 1
     fi
 
     show "✔ " $GREEN
@@ -290,25 +302,19 @@ unpackSources() {
   pushd "$tmp_dir" &> /dev/null || cleanAndExit 1
 
   if [[ "$arch_ext" == "tar.gz" || "$arch_ext" == "tgz" ]] ; then
-    tar xzf "$src_name"
-
-    if [[ $? -ne 0 ]] ; then
+    if ! tar xzf "$src_name" ; then
       show "ERROR\n" $RED
       error "Can't unpack Gzip archive"
       has_errors=true
     fi
   elif [[ "$arch_ext" == "tar.bz2" || "$arch_ext" == "tbz2" || "$arch_ext" == "tar.bz" || "$arch_ext" == "tbz" ]] ; then
-    tar xjf "$src_name"
-
-    if [[ $? -ne 0 ]] ; then
+    if ! tar xjf "$src_name" ; then
       show "ERROR\n" $RED
       error "Can't unpack Bzip2 archive"
       has_errors=true
     fi
   elif [[ "$arch_ext" == "tar.xz" || "$arch_ext" == "txz" ]] ; then
-    tar xJf "$src_name"
-
-    if [[ $? -ne 0 ]] ; then
+    if ! tar xJf "$src_name" ; then
       show "ERROR\n" $RED
       error "Can't unpack XZ archive"
       has_errors=true
@@ -326,7 +332,7 @@ unpackSources() {
   popd &> /dev/null || cleanAndExit 1
 
   if [[ -n "$has_errors" ]] ; then
-    cleanAndExit $EC_ERROR
+    cleanAndExit 1
   fi
 
   show "DONE" $GREEN
@@ -381,7 +387,7 @@ makeTempDir() {
 
   if [[ ! -d "$tmp_dir" ]] ; then
     error "Can't create temporary directory"
-    exit $EC_ERROR
+    exit 1
   fi
 }
 
@@ -449,7 +455,7 @@ isURL() {
 # Code: No
 # Echo: No
 cleanAndExit() {
-  local code="${1:-$EC_OK}"
+  local code="${1:-0}"
 
   if [[ -e "$tmp_dir" ]] ; then
     rm -rf "$tmp_dir"
@@ -463,7 +469,7 @@ cleanAndExit() {
 # Code: No
 # Echo: No
 termExit() {
-  cleanAndExit $EC_ERROR
+  cleanAndExit 1
 }
 
 ################################################################################
@@ -596,7 +602,6 @@ showOptWarn() {
 
 if [[ $# -eq 0 ]] ; then
   main
-  exit $?
 fi
 
 unset opt optn optm optv optt optk

@@ -1,21 +1,21 @@
 ################################################################################
 
-Summary:   Tool for packing Go package sources
-Name:      gopack
-Version:   1.13.0
-Release:   0%{?dist}
-Group:     Development/Tools
-License:   Apache License, Version 2.0
-URL:       https://kaos.sh/gopack
+Summary:    Tool for packing Go package sources
+Name:       gopack
+Version:    1.13.1
+Release:    0%{?dist}
+Group:      Development/Tools
+License:    Apache License, Version 2.0
+URL:        https://kaos.sh/gopack
 
-Source0:   https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
+Source0:    https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 
-BuildArch: noarch
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildArch:  noarch
+BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:  golang git curl
+Requires:   golang git curl
 
-Provides:  %{name} = %{version}-%{release}
+Provides:   %{name} = %{version}-%{release}
 
 ################################################################################
 
@@ -27,7 +27,7 @@ Simple tool for packing golang packages sources with all dependencies.
 %package build
 
 Summary:  Tool for building binaries from sources archive created by gopack
-Version:  1.2.4
+Version:  1.2.5
 Release:  0%{?dist}
 Group:    Development/Tools
 
@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Fri Feb 03 2023 Anton Novojilov <andy@essentialkaos.com> - 1.13.1-0
+- [gopack|gopack-build] Code refactoring
+
 * Tue Apr 12 2022 Anton Novojilov <andy@essentialkaos.com> - 1.13.0-0
 - [gopack] Added result signing feature
 
