@@ -17,11 +17,11 @@
 
 #### `gopack`
 
-[![demo](https://gh.kaos.st/gopack-1100.gif)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-1132.gif)](#usage-demo)
 
 #### `gopack-build`
 
-[![demo](https://gh.kaos.st/gopack-build-120.gif)](#usage-demo)
+[![demo](https://gh.kaos.st/gopack-build-126.gif)](#usage-demo)
 
 ### Installation
 

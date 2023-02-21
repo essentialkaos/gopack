@@ -2,7 +2,7 @@
 
 Summary:    Tool for packing Go package sources
 Name:       gopack
-Version:    1.13.1
+Version:    1.13.2
 Release:    0%{?dist}
 Group:      Development/Tools
 License:    Apache License, Version 2.0
@@ -26,10 +26,12 @@ Simple tool for packing golang packages sources with all dependencies.
 
 %package build
 
-Summary:  Tool for building binaries from sources archive created by gopack
-Version:  1.2.5
-Release:  0%{?dist}
-Group:    Development/Tools
+Summary:   Tool for building binaries from sources archive created by gopack
+Version:   1.2.6
+Release:   0%{?dist}
+Group:     Development/Tools
+
+Requires:  golang git curl
 
 %description build
 Tool for building binaries from sources archive created by gopack.
@@ -50,6 +52,8 @@ install -pm 775 %{name}-build %{buildroot}%{_bindir}/%{name}-build
 %clean
 rm -rf %{buildroot}
 
+################################################################################
+
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
@@ -63,6 +67,11 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Wed Feb 22 2023 Anton Novojilov <andy@essentialkaos.com> - 1.13.2-0
+- [gopack|gopack-build] Fixed --no-color option handling
+- [gopack-build] Improved remote file availability check
+- [gopack|gopack-build] Code refactoring
+
 * Fri Feb 03 2023 Anton Novojilov <andy@essentialkaos.com> - 1.13.1-0
 - [gopack|gopack-build] Code refactoring
 

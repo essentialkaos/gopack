@@ -21,7 +21,8 @@ endif
 	@echo -e "\e[1;32;49m\nShellcheck successfully downloaded and installed!\n\e[0m"
 
 test: ## Run shellcheck tests
-	shellcheck SOURCES/gopack SOURCES/gopack-build
+	shellcheck SOURCES/gopack
+	shellcheck SOURCES/gopack-build
 
 install: ## Install app to current system (requires sudo)
 ifneq ($(shell id -u), 0)

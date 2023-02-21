@@ -9,7 +9,7 @@ fi
 ################################################################################
 
 APP="GoPack Build"
-VER="1.2.5"
+VER="1.2.6"
 DESC="Simple tool for building binaries from sources archive"
 
 ################################################################################
@@ -65,7 +65,7 @@ CL_BL_GREY="\e[1;${GREY};49m"
 
 ################################################################################
 
-SUPPORTED_OPTS="tmp output !no_color !version !help !usage"
+SUPPORTED_OPTS="tmp output !no_color !version !help"
 SHORT_OPTS="T:tmp o:output nc:!no_color v:!version h:!help"
 
 ################################################################################
@@ -90,6 +90,7 @@ main() {
     unset NORM BOLD UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
+    no_color=true
   fi
 
   if [[ -n "$version" ]] ; then
@@ -97,7 +98,7 @@ main() {
     exit 0
   fi
 
-  if [[ -n "$help" || -n "$usage" || $# -eq 0 ]] ; then
+  if [[ -n "$help" || $# -eq 0 ]] ; then
     usage
     exit 0
   fi
@@ -189,7 +190,7 @@ process() {
 downloadSources() {
   local url="$1"
 
-  if ! isAccessibleUrl "$url" ; then
+  if ! isAccessibleURL "$url" ; then
     error "Can't download sources - server return error code"
     cleanAndExit 1
   fi
@@ -406,32 +407,27 @@ isAppInstalled() {
   return 0
 }
 
-# Check response status code for repo url
+# Check response status code for URL
 #
 # 1: URL (String)
 #
 # Code: Yes
 # Echo: No
-isAccessibleUrl() {
-  local status code nosniff size
+isAccessibleURL() {
+  local status code size
 
   if [[ "$1" =~ http:|https: ]] ; then
-    status=$(curl -LIs --max-redirs 10 -X GET "$1")
-    code=$(echo -e "$status" | grep "HTTP" | cut -f2 -d" " | tail -1)
-    nosniff=$(echo -e "$status" | grep "X-Content-Type-Options: nosniff")
-
-    # Nosniff mode works on Google Code, if we simple try check status server return
-    # code 404, but we can download this file
-    [[ -n $nosniff || "$code" == "200" ]] && return 0 || return 1
+    code=$(curl -LIs --max-redirs 10 -X GET -w '%{http_code}' -o /dev/null "$1")
+    [[ "$code" == "200" ]] && return 0 || return 1
   elif [[ "$1" =~ ftp: ]] ; then
     status=$(curl "$1" -Is)
     size=$(echo "$status" | grep "Content-Length" | cut -f2 -d" ")
-
-    [[ -n "$size" ]] && return 0 || return 1
+    [[ -n "$size" && "$size" != "0" ]] && return 0 || return 1
   else
     return 1
   fi
 }
+
 
 # Check if given value is URL
 #
@@ -482,7 +478,7 @@ termExit() {
 # Code: No
 # Echo: No
 show() {
-  if [[ -n "$2" && -z "$no_colors" ]] ; then
+  if [[ -n "$2" && -z "$no_color" ]] ; then
     echo -e "\e[${2}m${1}\e[0m"
   else
     echo -e "$*"
@@ -497,7 +493,7 @@ show() {
 # Code: No
 # Echo: No
 showm() {
-  if [[ -n "$2" && -z "$no_colors" ]] ; then
+  if [[ -n "$2" && -z "$no_color" ]] ; then
     echo -e -n "\e[${2}m${1}\e[0m"
   else
     echo -e -n "$*"
@@ -544,7 +540,7 @@ showo() {
 # Code: No
 # Echo: No
 error() {
-  show "$@" $RED 1>&2
+  show "▲ $*" $RED 1>&2
 }
 
 # Show usage info
