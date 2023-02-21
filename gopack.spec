@@ -26,10 +26,12 @@ Simple tool for packing golang packages sources with all dependencies.
 
 %package build
 
-Summary:  Tool for building binaries from sources archive created by gopack
-Version:  1.2.6
-Release:  0%{?dist}
-Group:    Development/Tools
+Summary:   Tool for building binaries from sources archive created by gopack
+Version:   1.2.6
+Release:   0%{?dist}
+Group:     Development/Tools
+
+Requires:  golang git curl
 
 %description build
 Tool for building binaries from sources archive created by gopack.
@@ -49,6 +51,8 @@ install -pm 775 %{name}-build %{buildroot}%{_bindir}/%{name}-build
 
 %clean
 rm -rf %{buildroot}
+
+################################################################################
 
 %files
 %defattr(-,root,root,-)
