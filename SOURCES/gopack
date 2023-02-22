@@ -9,7 +9,7 @@ fi
 ################################################################################
 
 APP="GoPack"
-VER="1.13.2"
+VER="1.14.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ################################################################################
@@ -65,11 +65,11 @@ CL_BL_GREY="\e[1;${GREY};49m"
 
 ################################################################################
 
-SUPPORTED_OPTS="tmp output revision tag branch depth sign !preserve_vendor 
+SUPPORTED_OPTS="tmp output revision tag branch depth sign !ignore_vendor 
  !no_color !verbose version !help"
 
 SHORT_OPTS="T:tmp o:output r:revision t:tag b:branch d:depth S:sign 
- pv:!preserve_vendor nc:!no_color V:!verbose v:version h:!help"
+ I:!ignore_vendor nc:!no_color V:!verbose v:version h:!help"
 
 ################################################################################
 
@@ -116,6 +116,11 @@ main() {
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
     no_color=true
+  fi
+
+  if [[ $# -eq 0 && "$version" == "true" ]] ; then
+    about
+    exit 0
   fi
 
   if [[ -n "$help" || $# -eq 0 ]] ; then
@@ -191,40 +196,8 @@ process() {
     cleanAndExit 1
   fi
 
-  findUsedDepsManager "$package"
-
-  if [[ -n "$preserve_vendor" ]] ; then
-    saveVendorData "$package"
-  fi
-
-  if [[ -n "$useGlide" ]] ; then
-    if ! installGlide ; then
-      cleanAndExit 1
-    fi
-
-    if ! getDepsByGlide "$package" ; then
-      cleanAndExit 1
-    fi
-  elif [[ -n "$useDep" ]] ; then
-    if ! installDep ; then
-      cleanAndExit 1
-    fi
-
-    if ! getDepsByDep "$package" ; then
-      cleanAndExit 1
-    fi
-  elif [[ -n "$useMod" ]] ; then
-    if ! getDepsByMod "$package" ; then
-      cleanAndExit 1
-    fi
-  else
-    if ! downloadDeps "$package" ; then
-      cleanAndExit 1
-    fi
-  fi
-
-  if [[ -n "$preserve_vendor" ]] ; then
-    restoreVendorData "$package"
+  if ! getDeps "$package" ; then
+    cleanAndExit 1
   fi
 
   if [[ -z "$output" ]] ; then
@@ -352,44 +325,54 @@ checkoutCode() {
   return 0
 }
 
-# Backup vendor data
+# Get dependencies for given package
 #
 # 1: Package name (String)
 #
-# Code: No
+# Code: Yes
 # Echo: No
-saveVendorData() {
+getDeps() {
   local package="$1"
+  local package_path="$GOPATH/src/$package"
 
-  if [[ ! -e "$GOPATH/src/$package/vendor" ]] ; then
-    return
+  if [[ -d "$package_path/vendor" ]] ; then
+    if [[ -n "$ignore_vendor" ]] ; then
+      rm -rf "$package_path/vendor"
+    else
+      saveLatestCommitsHash "$GOPATH/src" "$GOPATH/REVISIONS"
+      return 0
+    fi
   fi
 
-  cp -rlp "$GOPATH/src/$package/vendor" "$GOPATH/vendor_backup"
-  rm -rf "$GOPATH/src/$package/vendor/" &> /dev/null
-}
+  findUsedDepsManager "$package"
 
-# Restore vendor data
-#
-# 1: Package name (String)
-#
-# Code: No
-# Echo: No
-restoreVendorData() {
-  local package="$1"
+  if [[ -n "$useGlide" ]] ; then
+    if ! installGlide ; then
+      return 1
+    fi
 
-  if [[ ! -e "$GOPATH/vendor_backup" ]] ; then
-    return
+    if ! getDepsByGlide "$package" ; then
+      return 1
+    fi
+  elif [[ -n "$useDep" ]] ; then
+    if ! installDep ; then
+      return 1
+    fi
+
+    if ! getDepsByDep "$package" ; then
+      return 1
+    fi
+  elif [[ -n "$useMod" ]] ; then
+    if ! getDepsByMod "$package" ; then
+      return 1
+    fi
+  else
+    if ! downloadDeps "$package" ; then
+      return 1
+    fi
   fi
 
-  if [[ ! -e "$GOPATH/src/$package/vendor" ]] ; then
-    mkdir "$GOPATH/src/$package/vendor"
-  fi
-
-  # shellcheck disable=SC2216
-  yes | cp -rf "$GOPATH/vendor_backup"/* "$GOPATH/src/$package/vendor/" &> /dev/null
-
-  rm -rf "$GOPATH/vendor_backup" &> /dev/null
+  return 0
 }
 
 # Download dependencies for given package
@@ -998,8 +981,6 @@ error() {
 # Echo: No
 usage() {
   show ""
-  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - $DESC"
-  show ""
   show "${CL_BOLD}Usage:${CL_NORM} gopack ${CL_GREEN}{options}${CL_NORM} package-path"
   show ""
   show "Options" $BOLD
@@ -1011,7 +992,7 @@ usage() {
   showo "--branch, -b"           "Target branch" "branch"
   showo "--tag, -t"              "Target tag" "tag"
   showo "--depth, -d"            "Clone depth ${CL_DARK}(10 commits by default)${CL_NORM}" "num"
-  showo "--preserve-vendor, -pv" "Preserve old vendor data ${CL_DARK}(unsafe, use with caution)${CL_NORM}"
+  showo "--ignore-vendor, -I"    "Ignore vendored dependencies"
   showo "--tmp, -T"              "Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}" "path"
   showo "--verbose, -V"          "Verbose output"
   showo "--no-color, -nc"        "Disable colors in output"
@@ -1031,6 +1012,16 @@ usage() {
   show ""
   show "  gopack -S A1092511 -v 1.0.1 github.com/essentialkaos/ssllabs_client"
   show "  Pack sources for version 1.0.1, save result as ssllabs_client-1.0.1.tar.bz2 and create signature" $DARK
+  show ""
+}
+
+# Show info about version
+#
+# Code: No
+# Echo: No
+about() {
+  show ""
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - $DESC"
   show ""
   show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
   show "Apache License, Version 2.0 <https://www.apache.org/licenses/LICENSE-2.0>" $DARK
