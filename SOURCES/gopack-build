@@ -198,7 +198,7 @@ downloadSources() {
   local file_name
   file_name=$(basename "$url")
 
-  show "Dowloading sources…"
+  show "Downloading sources…"
 
   if ! curl -L --max-redirs 10 --progress-bar "$url" -o "$tmp_dir/$file_name" ; then
     cleanAndExit 1
@@ -500,7 +500,7 @@ showm() {
   fi
 }
 
-# Show formated message with option info
+# Show formatted message with option info
 #
 # 1: Option (String)
 # 2: Description (String)

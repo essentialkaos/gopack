@@ -106,7 +106,7 @@ useMod=""
 
 # Main function
 #
-# *: All unparsed argumens
+# *: All unparsed arguments
 #
 # Code: No
 # Echo: No
@@ -932,7 +932,7 @@ showm() {
   fi
 }
 
-# Show formated message with option info
+# Show formatted message with option info
 #
 # 1: Option (String)
 # 2: Description (String)
