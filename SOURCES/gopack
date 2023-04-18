@@ -613,7 +613,7 @@ cleanPackDir() {
 # Pack source into archive
 #
 # 1: Output file (String)
-# 2: Temprary dir (String)
+# 2: Temporary dir (String)
 #
 # Code: Yes
 # Echo: No
