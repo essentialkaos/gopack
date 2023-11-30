@@ -27,7 +27,7 @@ Simple tool for packing golang packages sources with all dependencies.
 %package build
 
 Summary:   Tool for building binaries from sources archive created by gopack
-Version:   1.2.6
+Version:   1.2.7
 Release:   0%{?dist}
 Group:     Development/Tools
 
