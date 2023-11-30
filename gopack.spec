@@ -2,7 +2,7 @@
 
 Summary:    Tool for packing Go package sources
 Name:       gopack
-Version:    1.14.0
+Version:    1.14.1
 Release:    0%{?dist}
 Group:      Development/Tools
 License:    Apache License, Version 2.0
@@ -67,6 +67,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Thu Nov 30 2023 Anton Novojilov <andy@essentialkaos.com> - 1.14.1-0
+- [gopack|gopack-build] Code refactoring
+
 * Wed Feb 22 2023 Anton Novojilov <andy@essentialkaos.com> - 1.14.0-0
 - [gopack] Added option --ignore-vendor option for ignoring vendored
   dependencies
