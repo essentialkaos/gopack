@@ -9,13 +9,14 @@ fi
 ################################################################################
 
 APP="GoPack"
-VER="1.14.0"
+VER="1.14.1"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ################################################################################
 
 NORM=0
 BOLD=1
+ITLC=3
 UNLN=4
 RED=31
 GREEN=32
@@ -29,39 +30,43 @@ DARK=90
 # shellcheck disable=SC2034
 CL_NORM="\e[${NORM}m"
 # shellcheck disable=SC2034
-CL_BOLD="\e[0;${BOLD};49m"
+CL_BOLD="\e[${BOLD}m"
 # shellcheck disable=SC2034
-CL_UNLN="\e[0;${UNLN};49m"
+CL_ITLC="\e[${ITLC}m"
 # shellcheck disable=SC2034
-CL_RED="\e[0;${RED};49m"
+CL_UNLN="\e[${UNLN}m"
 # shellcheck disable=SC2034
-CL_GREEN="\e[0;${GREEN};49m"
+CL_RED="\e[${RED}m"
 # shellcheck disable=SC2034
-CL_YELLOW="\e[0;${YELLOW};49m"
+CL_GREEN="\e[${GREEN}m"
 # shellcheck disable=SC2034
-CL_BLUE="\e[0;${BLUE};49m"
+CL_YELLOW="\e[${YELLOW}m"
 # shellcheck disable=SC2034
-CL_MAG="\e[0;${MAG};49m"
+CL_BLUE="\e[${BLUE}m"
 # shellcheck disable=SC2034
-CL_CYAN="\e[0;${CYAN};49m"
+CL_MAG="\e[${MAG}m"
 # shellcheck disable=SC2034
-CL_GREY="\e[0;${GREY};49m"
+CL_CYAN="\e[${CYAN}m"
 # shellcheck disable=SC2034
-CL_DARK="\e[0;${DARK};49m"
+CL_GREY="\e[${GREY}m"
 # shellcheck disable=SC2034
-CL_BL_RED="\e[1;${RED};49m"
+CL_DARK="\e[${DARK}m"
 # shellcheck disable=SC2034
-CL_BL_GREEN="\e[1;${GREEN};49m"
+CL_BL_RED="\e[${BOLD};${RED}m"
 # shellcheck disable=SC2034
-CL_BL_YELLOW="\e[1;${YELLOW};49m"
+CL_BL_GREEN="\e[${BOLD};${GREEN}m"
 # shellcheck disable=SC2034
-CL_BL_BLUE="\e[1;${BLUE};49m"
+CL_BL_YELLOW="\e[${BOLD};${YELLOW}m"
 # shellcheck disable=SC2034
-CL_BL_MAG="\e[1;${MAG};49m"
+CL_BL_BLUE="\e[${BOLD};${BLUE}m"
 # shellcheck disable=SC2034
-CL_BL_CYAN="\e[1;${CYAN};49m"
+CL_BL_MAG="\e[${BOLD};${MAG}m"
 # shellcheck disable=SC2034
-CL_BL_GREY="\e[1;${GREY};49m"
+CL_BL_CYAN="\e[${BOLD};${CYAN}m"
+# shellcheck disable=SC2034
+CL_BL_GREY="\e[${BOLD};${GREY}m"
+# shellcheck disable=SC2034
+CL_IT_DARK="\e[${ITLC};${DARK}m"
 
 ################################################################################
 
@@ -106,15 +111,15 @@ useMod=""
 
 # Main function
 #
-# *: All unparsed argumens
+# *: All unparsed arguments
 #
 # Code: No
 # Echo: No
 main() {
-  if [[ ! -t 1 || -n "$no_color" || -n "$NO_COLOR" ]] ; then
-    unset NORM BOLD UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
+  if [[ ! -c /dev/stdout || -n "$no_color" || -n "$NO_COLOR" ]] ; then
+    unset NORM BOLD CL_ITLC UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
-    unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY
+    unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_IT_DARK
     no_color=true
   fi
 
@@ -613,7 +618,7 @@ cleanPackDir() {
 # Pack source into archive
 #
 # 1: Output file (String)
-# 2: Temprary dir (String)
+# 2: Temporary dir (String)
 #
 # Code: Yes
 # Echo: No
@@ -932,7 +937,7 @@ showm() {
   fi
 }
 
-# Show formated message with option info
+# Show formatted message with option info
 #
 # 1: Option (String)
 # 2: Description (String)
