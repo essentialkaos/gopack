@@ -9,7 +9,7 @@ fi
 ################################################################################
 
 APP="GoPack"
-VER="1.14.1"
+VER="1.14.2"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ################################################################################
@@ -599,12 +599,14 @@ saveLatestCommitsHash() {
 cleanPackDir() {
   local dir="$1"
 
+  find "$dir" -type d -name ".git" -exec rm -rf {} \; 2>/dev/null
+  find "$dir" -type d -name ".github" -exec rm -rf {} \; 2>/dev/null
+
   find "$dir" -type f -name ".gitignore" -exec rm -f {} \; 2> /dev/null
   find "$dir" -type f -name ".hgignore" -exec rm -f {} \; 2> /dev/null
   find "$dir" -type f -name ".bzrignore" -exec rm -f {} \; 2> /dev/null
   find "$dir" -type f -name ".gitmodules" -exec rm -f {} \; 2>/dev/null
 
-  find "$dir" -type f -name ".github" -exec rm -rf {} \; 2>/dev/null
   find "$dir" -type f -name ".travis.yml" -exec rm -f {} \; 2>/dev/null
   find "$dir" -type f -name ".drone.sec" -exec rm -f {} \; 2>/dev/null
   find "$dir" -type f -name ".drone.yml" -exec rm -f {} \; 2>/dev/null
