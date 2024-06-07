@@ -2,7 +2,7 @@
 
 Summary:    Tool for packing Go package sources
 Name:       gopack
-Version:    1.14.2
+Version:    1.15.0
 Release:    0%{?dist}
 Group:      Development/Tools
 License:    Apache License, Version 2.0
@@ -67,6 +67,10 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Thu Jun 06 2024 Anton Novojilov <andy@essentialkaos.com> - 1.15.0-0
+- [gopack] Improved sources downloading process
+- [gopack] Added proxy.golang.org support
+
 * Mon May 27 2024 Anton Novojilov <andy@essentialkaos.com> - 1.14.2-0
 - [gopack] Improved sources cleanup
 
