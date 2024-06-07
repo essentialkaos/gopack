@@ -9,7 +9,7 @@ fi
 ################################################################################
 
 APP="GoPack Build"
-VER="1.2.8"
+VER="1.2.9"
 DESC="Simple tool for building binaries from sources archive"
 
 ################################################################################
@@ -91,7 +91,7 @@ tmp_dir=""
 ################################################################################
 
 main() {
-  if [[ ! -c /dev/stdout || -n "$no_color" || -n "$NO_COLOR" ]] ; then
+  if [[ -n "$no_color" || -n "$NO_COLOR" ]] || [[ ! -c /dev/stdout && -z $FAKETTY ]] ; then
     unset NORM BOLD CL_ITLC UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_IT_DARK
