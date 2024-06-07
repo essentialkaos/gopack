@@ -60,11 +60,11 @@ sudo make install
 
 #### `gopack`
 
-<img src=".github/images/gopack.svg" />
+<a href=".github/images/gopack.svg"><img src=".github/images/gopack.svg" /></a>
 
 #### `gopack-build`
 
-<img src=".github/images/gopack-build.svg" />
+<a href=".github/images/gopack-build.svg"><img src=".github/images/gopack-build.svg" /></a>
 
 ### Build Status
 
