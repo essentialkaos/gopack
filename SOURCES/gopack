@@ -9,7 +9,7 @@ fi
 ################################################################################
 
 APP="GoPack"
-VER="1.14.2"
+VER="1.15.0"
 DESC="Simple tool for packing golang packages sources with all dependencies"
 
 ################################################################################
@@ -70,10 +70,10 @@ CL_IT_DARK="\e[${ITLC};${DARK}m"
 
 ################################################################################
 
-SUPPORTED_OPTS="tmp output revision tag branch depth sign !ignore_vendor 
+SUPPORTED_OPTS="tmp !proxy output revision tag branch depth sign !ignore_vendor 
  !no_color !verbose version !help"
 
-SHORT_OPTS="T:tmp o:output r:revision t:tag b:branch d:depth S:sign 
+SHORT_OPTS="T:tmp P:!proxy o:output r:revision t:tag b:branch d:depth S:sign 
  I:!ignore_vendor nc:!no_color V:!verbose v:version h:!help"
 
 ################################################################################
@@ -116,7 +116,7 @@ useMod=""
 # Code: No
 # Echo: No
 main() {
-  if [[ ! -c /dev/stdout || -n "$no_color" || -n "$NO_COLOR" ]] ; then
+  if [[ -n "$no_color" || -n "$NO_COLOR" ]] || [[ ! -c /dev/stdout && -z $FAKETTY ]] ; then
     unset NORM BOLD CL_ITLC UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_IT_DARK
@@ -269,6 +269,10 @@ setupGoEnv() {
   export PATH="$target_dir/bin:$PATH"
 
   export GO111MODULE="auto"
+
+  if [[ -n "$proxy" ]] ; then
+    export GOPROXY=https://proxy.golang.org/cached-only,direct
+  fi
 }
 
 # Checkout source code
@@ -537,14 +541,21 @@ getDepsByDep() {
 getDepsByMod() {
   local package="$1"
 
-  showm "Downloading dependencies with go mod… " $BOLD
-
   export GO111MODULE=on
 
   pushd "$GOPATH/src/$package" &> /dev/null || printCDErrorAndExit
 
-    if ! execCmd "go" "mod" "vendor" "-v" ; then
+    showm "Downloading dependencies with go mod… " $BOLD
+
+    if ! execCmd "go" "mod" "tidy" "-e" ; then
       error "Can't download package dependencies"
+      return 1
+    fi
+
+    showm "Vendoring dependencies… " $BOLD
+
+    if ! execCmd "go" "mod" "vendor" "-v" "-e" ; then
+      error "Can't vendor package dependencies"
       return 1
     fi
 
@@ -774,6 +785,7 @@ execCmd() {
 
   if [[ -n "$verbose" ]] ; then
     show "\n\n$SEPARATOR\n" $GREY
+    show "${CL_BL_CYAN}→ $*${CL_NORM}\n"
     # shellcheck disable=SC2068
     $@
     status=$?
@@ -999,6 +1011,7 @@ usage() {
   showo "--branch, -b"           "Target branch" "branch"
   showo "--tag, -t"              "Target tag" "tag"
   showo "--depth, -d"            "Clone depth ${CL_DARK}(10 commits by default)${CL_NORM}" "num"
+  showo "--proxy, -P"            "Use proxy.golang.org for downloading dependencies"
   showo "--ignore-vendor, -I"    "Ignore vendored dependencies"
   showo "--tmp, -T"              "Path to temporary directory ${CL_DARK}(/tmp by default)${CL_NORM}" "path"
   showo "--verbose, -V"          "Verbose output"
@@ -1018,7 +1031,8 @@ usage() {
   show "  as ssllabs-client-1.0.1.tgz" $DARK
   show ""
   show "  gopack -S A1092511 -v 1.0.1 github.com/essentialkaos/ssllabs_client"
-  show "  Pack sources for version 1.0.1, save result as ssllabs_client-1.0.1.tar.bz2 and create signature" $DARK
+  show "  Pack sources for version 1.0.1, save result as ssllabs_client-1.0.1.tar.bz2 and" $DARK
+  show "  create signature" $DARK
   show ""
 }
 

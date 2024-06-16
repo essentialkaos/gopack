@@ -1,8 +1,8 @@
-<p align="center"><a href="#readme"><img src="https://gh.kaos.st/gopack.svg"/></a></p>
+<p align="center"><a href="#readme"><img src=".github/images/card.svg"/></a></p>
 
 <p align="center">
   <a href="https://kaos.sh/w/gopack/ci"><img src="https://kaos.sh/w/gopack/ci.svg" alt="GitHub Actions CI Status" /></a>
-  <a href="#license"><img src="https://gh.kaos.st/apache2.svg"></a>
+  <a href="#license"><img src=".github/images/license.svg"/></a>
 </p>
 
 <p align="center"><a href="#usage-demo">Usage demo</a> • <a href="#installation">Installation</a> • <a href="#usage">Usage</a> • <a href="#build-status">Build Status</a> • <a href="#license">License</a></p>
@@ -60,61 +60,11 @@ sudo make install
 
 #### `gopack`
 
-```
-Usage: gopack {options} package-path
-
-Options
-
-  --output, -o filename       Output file name
-  --version, -v version       Package version
-  --sign, -S key              Sign result with GPG
-  --revision, -r revision     Target revision
-  --branch, -b branch         Target branch
-  --tag, -t tag               Target tag
-  --depth, -d num             Clone depth (10 commits by default)
-  --preserve-vendor, -pv      Preserve old vendor data (unsafe, use with caution)
-  --tmp, -T path              Path to temporary directory (/tmp by default)
-  --verbose, -V               Verbose output
-  --no-color, -nc             Disable colors in output
-  --help, -h                  Show this help message
-
-Examples
-
-  gopack -v 1.0.1 github.com/essentialkaos/ssllabs_client
-  Pack sources for version 1.0.1 and save result as ssllabs_client-1.0.1.tar.bz2
-
-  gopack -o ssllabs-client-1.0.1.tar.bz2 github.com/essentialkaos/ssllabs_client
-  Pack sources for version 1.0.1 and save result as ssllabs-client-1.0.1.tar.bz2
-
-  gopack -o ssllabs-client-1.0.1.tgz -t v1.0.1 github.com/essentialkaos/ssllabs_client
-  Fetch sources with tag v1.0.1, pack sources for version 1.0.1 and save result 
-  as ssllabs-client-1.0.1.tgz
-
-  gopack -S A1092511 -v 1.0.1 github.com/essentialkaos/ssllabs_client
-  Pack sources for version 1.0.1, save result as ssllabs_client-1.0.1.tar.bz2 and create signature
-```
+<img src=".github/images/gopack.svg" />
 
 #### `gopack-build`
-```
-Usage: gopack-build {options} file
 
-Options
-
-  --output, -o directory     Output directory
-  --tmp, -T path             Path to temporary directory (/tmp by default)
-  --no-color, -nc            Disable colors in output
-  --about                    Show information about version
-  --help, -h                 Show this help message
-
-Examples
-
-  gopack yo-0.2.0.tar.bz2
-  Build binary from local archive with sources
-
-  gopack -o /home/user https://github.com/essentialkaos/yo/releases/download/v0.2.0/yo-0.2.0.tar.bz2
-  Build binary from remote archive with sources and save result
-  to directory /home/user
-```
+<img src=".github/images/gopack-build.svg" />
 
 ### Build Status
 
